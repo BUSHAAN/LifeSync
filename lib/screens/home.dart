@@ -1,4 +1,7 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
+import 'package:flutter_todo_app/screens/addTask.dart';
 
 import '../model/todo.dart';
 import '../constants/colors.dart';
@@ -67,39 +70,10 @@ class _HomeState extends State<Home> {
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: Row(children: [
-              Expanded(
-                child: Container(
-                  margin: EdgeInsets.only(
-                    bottom: 20,
-                    right: 20,
-                    left: 20,
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.grey,
-                        offset: Offset(0.0, 0.0),
-                        blurRadius: 10.0,
-                        spreadRadius: 0.0,
-                      ),
-                    ],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: TextField(
-                    controller: _todoController,
-                    decoration: InputDecoration(
-                        hintText: 'Add a new todo item',
-                        border: InputBorder.none),
-                  ),
-                ),
-              ),
-              Container(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Container(
                 margin: EdgeInsets.only(
                   bottom: 20,
                   right: 20,
@@ -112,7 +86,10 @@ class _HomeState extends State<Home> {
                     ),
                   ),
                   onPressed: () {
-                    _addToDoItem(_todoController.text);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => AddTasksPage()),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: tdBlue,
