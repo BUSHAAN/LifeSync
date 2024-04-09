@@ -2,8 +2,8 @@
 import 'dart:core';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_todo_app/screens/next_page.dart';
-
+import 'package:flutter_todo_app/model/Task.dart';
+import 'package:flutter_todo_app/pages/next_page.dart';
 
 class AddTasksPage extends StatefulWidget {
   const AddTasksPage({super.key});
@@ -14,7 +14,6 @@ class AddTasksPage extends StatefulWidget {
 
 class _AddTasksPageState extends State<AddTasksPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
   String _taskName = "";
   double _duration = 0.0; // Assuming hours
   bool _allowSplitting = false;
@@ -37,7 +36,6 @@ class _AddTasksPageState extends State<AddTasksPage> {
     "after hours",
     "late night",
   ];
-
 
   Map<String, dynamic> prepareData() {
     return {
@@ -271,21 +269,21 @@ class _AddTasksPageState extends State<AddTasksPage> {
                   height: 20,
                 ),
                 ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _formKey.currentState!.save();
-                          // Prepare data and navigate to next page using Navigator.push
-                          Map<String, dynamic> taskData = prepareData();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    NextPage(taskDataDetails: taskData)),
-                          ).then((_)=> _formKey.currentState?.reset());
-                        }
-                      },
-                      child: Text("Submit"),
-                    ),
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      _formKey.currentState!.save();
+                      // Prepare data and navigate to next page using Navigator.push
+                      Map<String, dynamic> taskData = prepareData();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                NextPage(taskDataDetails: taskData)),
+                      ).then((_) => _formKey.currentState?.reset());
+                    }
+                  },
+                  child: Text("Submit"),
+                ),
               ],
             ),
           )),

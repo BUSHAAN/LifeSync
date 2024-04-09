@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../model/todo.dart';
+import '../model/Task.dart';
 import '../constants/colors.dart';
 
 class ToDoItem extends StatelessWidget {
-  final ToDo todo;
+  final Task todo;
   final onToDoChanged;
   final onDeleteItem;
 
@@ -34,7 +34,7 @@ class ToDoItem extends StatelessWidget {
           color: tdBlue,
         ),
         title: Text(
-          todo.todoText!,
+          todo.taskName,
           style: TextStyle(
             fontSize: 16,
             color: tdBlack,

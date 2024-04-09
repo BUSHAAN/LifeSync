@@ -1,7 +1,7 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:flutter/material.dart';
-import '../model/todo.dart';
+import '../model/Task.dart';
 import '../constants/colors.dart';
 import '../widgets/todo_item.dart';
 
@@ -13,8 +13,8 @@ class AllTasks extends StatefulWidget {
 }
 
 class _AllTasksState extends State<AllTasks> {
-  final todosList = ToDo.todoList();
-  List<ToDo> _foundToDo = [];
+  final todosList = Task.todoList();
+  List<Task> _foundToDo = [];
   final _todoController = TextEditingController();
 
   @override
@@ -54,7 +54,7 @@ class _AllTasksState extends State<AllTasks> {
                           ),
                         ),
                       ),
-                      for (ToDo todoo in _foundToDo.reversed)
+                      for (Task todoo in _foundToDo.reversed)
                         ToDoItem(
                           todo: todoo,
                           onToDoChanged: _handleToDoChange,
@@ -68,15 +68,12 @@ class _AllTasksState extends State<AllTasks> {
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(
+            child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              Container(
                 margin: EdgeInsets.only(
                   bottom: 20,
                   right: 20,
                 ),
-                
               ),
             ]),
           ),
@@ -85,7 +82,7 @@ class _AllTasksState extends State<AllTasks> {
     );
   }
 
-  void _handleToDoChange(ToDo todo) {
+  void _handleToDoChange(Task todo) {
     setState(() {
       todo.isDone = !todo.isDone;
     });
@@ -99,21 +96,21 @@ class _AllTasksState extends State<AllTasks> {
 
   void _addToDoItem(String toDo) {
     setState(() {
-      todosList.add(ToDo(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        todoText: toDo,
-      ));
+      // todosList.add(Task(
+      //   id: DateTime.now().millisecondsSinceEpoch.toString(),
+      //   todoText: toDo,
+      // ));
     });
     _todoController.clear();
   }
 
   void _runFilter(String enteredKeyword) {
-    List<ToDo> results = [];
+    List<Task> results = [];
     if (enteredKeyword.isEmpty) {
       results = todosList;
     } else {
       results = todosList
-          .where((item) => item.todoText!
+          .where((item) => item.taskName
               .toLowerCase()
               .contains(enteredKeyword.toLowerCase()))
           .toList();

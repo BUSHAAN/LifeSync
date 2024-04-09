@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/constants/colors.dart';
-import 'package:flutter_todo_app/screens/addTask.dart';
-import 'package:flutter_todo_app/screens/allTasks.dart';
+import 'package:flutter_todo_app/pages/addTask.dart';
+import 'package:flutter_todo_app/pages/allTasks.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
