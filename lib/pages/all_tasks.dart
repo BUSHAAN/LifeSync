@@ -1,12 +1,12 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:flutter/material.dart';
-import '../model/Task.dart';
+import '../model/task.dart';
 import '../constants/colors.dart';
 import '../widgets/todo_item.dart';
 
 class AllTasks extends StatefulWidget {
-  AllTasks({Key? key}) : super(key: key);
+  const AllTasks({super.key});
 
   @override
   State<AllTasks> createState() => _AllTasksState();
@@ -159,7 +159,7 @@ class _AllTasksState extends State<AllTasks> {
           color: tdBlack,
           size: 30,
         ),
-        Container(
+        SizedBox(
           height: 40,
           width: 40,
           child: ClipRRect(

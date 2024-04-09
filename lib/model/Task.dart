@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 enum Schedule { mornings, evenings, workinghours, weekends }
 
 enum Deadline { hardDeadline, softDeadline, noDeadline }

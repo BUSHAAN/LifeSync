@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class NextPage extends StatelessWidget {
   final Map<String, dynamic> taskDataDetails;
-  const NextPage({Key? key, required this.taskDataDetails}) : super(key: key);
+  const NextPage({super.key, required this.taskDataDetails});
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +31,7 @@ class NextPage extends StatelessWidget {
                 'Duration:',
                 style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
               ),
-              Text(duration + ' hours'),
+              Text('$duration hours'),
               const SizedBox(height: 10.0),
               const Text(
                 'Deadline:',

@@ -2,7 +2,6 @@
 import 'dart:core';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_todo_app/model/Task.dart';
 import 'package:flutter_todo_app/pages/next_page.dart';
 
 class AddTasksPage extends StatefulWidget {
