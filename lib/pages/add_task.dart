@@ -1,8 +1,10 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, unused_field, duplicate_ignore
 import 'dart:core';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_todo_app/pages/next_page.dart';
+import 'package:flutter_todo_app/pages/home_page.dart';
 
 class AddTasksPage extends StatefulWidget {
   const AddTasksPage({super.key});
@@ -12,18 +14,18 @@ class AddTasksPage extends StatefulWidget {
 }
 
 class _AddTasksPageState extends State<AddTasksPage> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  String _taskName = "";
-  double _duration = 0.0; // Assuming hours
+  final String _userId = FirebaseAuth.instance.currentUser!.uid;
+  final _taskNameController = TextEditingController();
+  final _durationController = TextEditingController();
   bool _allowSplitting = false;
-  double _maxChunkTime = 0.0; // Assuming hours
-  String _priority = ""; // Default priority
-  String _deadlineType = ""; // Default deadline type
+  final _maxChunkTimeController = TextEditingController();
+  String _priority = "";
+  String _deadlineType = "";
   DateTime? _deadline;
   DateTime? _startDate;
   String _schedule = "";
 
-  final List<String> _priorities = ["high", "med", "low"];
+  final List<String> _priorities = ["high", "medium", "low"];
   final List<String> _deadlineTypes = [
     "hard deadline",
     "soft deadline",
@@ -36,20 +38,38 @@ class _AddTasksPageState extends State<AddTasksPage> {
     "late night",
   ];
 
-  Map<String, dynamic> prepareData() {
-    return {
-      "taskName": _taskName,
-      "duration": _duration,
-      "allowSplitting": _allowSplitting,
-      "maxChunkTime": _allowSplitting == true ? _maxChunkTime : null,
-      "priority": _priority,
-      "deadlineType": _deadlineType,
-      "deadline": _deadlineType == "no deadline" ? null : _deadline,
-      "startDate": _startDate,
-      "schedule": _schedule,
-    };
+  Future addTaskDetails(
+    String userId,
+    String taskName,
+    double duration,
+    bool allowSplitting,
+    double? maxChunkTime,
+    String priority,
+    String deadlineType,
+    DateTime? deadline,
+    DateTime? startDate,
+    String schedule,
+  ) async {
+    await FirebaseFirestore.instance.collection('Tasks').add({
+      "userId": userId,
+      "taskName": taskName,
+      "duration": duration,
+      "allowSplitting": allowSplitting,
+      "maxChunkTime": maxChunkTime,
+      "priority": priority,
+      "deadlineType": deadlineType,
+      "deadline": deadline,
+      "startDate": startDate,
+      "schedule": schedule,
+    });
+    @override
+    void dispose() {
+      _taskNameController.dispose();
+      _durationController.dispose();
+      _maxChunkTimeController.dispose();
+      super.dispose();
+    }
   }
-
   // Function to show date picker for Deadline
 
   Future<void> _selectDeadlineDate(BuildContext context) async {
@@ -125,15 +145,15 @@ class _AddTasksPageState extends State<AddTasksPage> {
       body: SingleChildScrollView(
           padding: EdgeInsets.all(20.0),
           child: Form(
-            key: _formKey,
             child: Column(
               children: [
                 //Task name
                 TextFormField(
-                    decoration: InputDecoration(labelText: "Task Name"),
-                    validator: (value) =>
-                        value!.isEmpty ? "Please enter a task name" : null,
-                    onSaved: (value) => setState(() => _taskName = value!)),
+                  controller: _taskNameController,
+                  decoration: InputDecoration(labelText: "Task Name"),
+                  validator: (value) =>
+                      value!.isEmpty ? "Please enter a task name" : null,
+                ),
                 //Duration
                 Row(
                   children: [
@@ -141,13 +161,12 @@ class _AddTasksPageState extends State<AddTasksPage> {
                     SizedBox(width: 10.0),
                     Expanded(
                       child: TextFormField(
+                        controller: _durationController,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(hintText: "0.0"),
                         validator: (value) => double.tryParse(value!) == null
                             ? "Invalid duration"
                             : null,
-                        onSaved: (value) =>
-                            setState(() => _duration = double.parse(value!)),
                       ),
                     ),
                   ],
@@ -172,13 +191,12 @@ class _AddTasksPageState extends State<AddTasksPage> {
                       SizedBox(width: 10.0),
                       Expanded(
                         child: TextFormField(
+                          controller: _maxChunkTimeController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(hintText: "0.0"),
                           validator: (value) => double.tryParse(value!) == null
                               ? "Invalid duration"
                               : null,
-                          onSaved: (value) => setState(
-                              () => _maxChunkTime = double.parse(value!)),
                           enabled: _allowSplitting,
                         ),
                       ),
@@ -269,17 +287,21 @@ class _AddTasksPageState extends State<AddTasksPage> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _formKey.currentState!.save();
-                      // Prepare data and navigate to next page using Navigator.push
-                      Map<String, dynamic> taskData = prepareData();
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                NextPage(taskDataDetails: taskData)),
-                      ).then((_) => _formKey.currentState?.reset());
-                    }
+                    addTaskDetails(
+                        _userId,
+                        _taskNameController.text.trim(),
+                        double.parse(_durationController.text.trim()),
+                        _allowSplitting,
+                        double.parse(_maxChunkTimeController.text.trim()),
+                        _priority,
+                        _deadlineType,
+                        _deadline,
+                        _startDate,
+                        _schedule);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HomePage()),
+                    );
                   },
                   child: Text("Submit"),
                 ),
