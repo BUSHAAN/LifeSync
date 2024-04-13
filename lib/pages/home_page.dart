@@ -3,7 +3,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/pages/add_task.dart';
-import 'package:flutter_todo_app/pages/all_tasks.dart';
+import 'package:flutter_todo_app/pages/all_tasks_page.dart';
 import 'package:flutter_todo_app/pages/login_or_register_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -67,7 +67,7 @@ class _HomePageState extends State<HomePage> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => AllTasks()),
+                      MaterialPageRoute(builder: (context) => AllTasksPage()),
                     );
                   },
                   child: Text("all tasks")),
