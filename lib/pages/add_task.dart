@@ -298,10 +298,7 @@ class _AddTasksPageState extends State<AddTasksPage> {
                         _deadline,
                         _startDate,
                         _schedule);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => HomePage()),
-                    );
+                    Navigator.pop(context);
                   },
                   child: Text("Submit"),
                 ),
