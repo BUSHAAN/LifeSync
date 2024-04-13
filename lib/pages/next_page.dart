@@ -7,7 +7,7 @@ class NextPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String title = taskDataDetails['taskName'] ?? "";
-    String duration = taskDataDetails['duration'].toString() ?? "";
+    String duration = taskDataDetails['duration'].toString();
     DateTime? deadline = taskDataDetails['deadline'];
     String? schedule = taskDataDetails['schedule'];
 
