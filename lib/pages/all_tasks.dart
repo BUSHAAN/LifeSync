@@ -1,19 +1,20 @@
-import 'package:flutter/material.dart';
+// ignore_for_file: prefer_const_constructors
 
-import '../model/todo.dart';
+import 'package:flutter/material.dart';
+import '../model/task.dart';
 import '../constants/colors.dart';
 import '../widgets/todo_item.dart';
 
-class Home extends StatefulWidget {
-  Home({Key? key}) : super(key: key);
+class AllTasks extends StatefulWidget {
+  const AllTasks({super.key});
 
   @override
-  State<Home> createState() => _HomeState();
+  State<AllTasks> createState() => _AllTasksState();
 }
 
-class _HomeState extends State<Home> {
-  final todosList = ToDo.todoList();
-  List<ToDo> _foundToDo = [];
+class _AllTasksState extends State<AllTasks> {
+  final todosList = Task.todoList();
+  List<Task> _foundToDo = [];
   final _todoController = TextEditingController();
 
   @override
@@ -53,7 +54,7 @@ class _HomeState extends State<Home> {
                           ),
                         ),
                       ),
-                      for (ToDo todoo in _foundToDo.reversed)
+                      for (Task todoo in _foundToDo.reversed)
                         ToDoItem(
                           todo: todoo,
                           onToDoChanged: _handleToDoChange,
@@ -67,58 +68,11 @@ class _HomeState extends State<Home> {
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: Row(children: [
-              Expanded(
-                child: Container(
-                  margin: EdgeInsets.only(
-                    bottom: 20,
-                    right: 20,
-                    left: 20,
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.grey,
-                        offset: Offset(0.0, 0.0),
-                        blurRadius: 10.0,
-                        spreadRadius: 0.0,
-                      ),
-                    ],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: TextField(
-                    controller: _todoController,
-                    decoration: InputDecoration(
-                        hintText: 'Add a new todo item',
-                        border: InputBorder.none),
-                  ),
-                ),
-              ),
+            child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               Container(
                 margin: EdgeInsets.only(
                   bottom: 20,
                   right: 20,
-                ),
-                child: ElevatedButton(
-                  child: Text(
-                    '+',
-                    style: TextStyle(
-                      fontSize: 40,
-                    ),
-                  ),
-                  onPressed: () {
-                    _addToDoItem(_todoController.text);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: tdBlue,
-                    minimumSize: Size(60, 60),
-                    elevation: 10,
-                  ),
                 ),
               ),
             ]),
@@ -128,7 +82,7 @@ class _HomeState extends State<Home> {
     );
   }
 
-  void _handleToDoChange(ToDo todo) {
+  void _handleToDoChange(Task todo) {
     setState(() {
       todo.isDone = !todo.isDone;
     });
@@ -142,21 +96,21 @@ class _HomeState extends State<Home> {
 
   void _addToDoItem(String toDo) {
     setState(() {
-      todosList.add(ToDo(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        todoText: toDo,
-      ));
+      // todosList.add(Task(
+      //   id: DateTime.now().millisecondsSinceEpoch.toString(),
+      //   todoText: toDo,
+      // ));
     });
     _todoController.clear();
   }
 
   void _runFilter(String enteredKeyword) {
-    List<ToDo> results = [];
+    List<Task> results = [];
     if (enteredKeyword.isEmpty) {
       results = todosList;
     } else {
       results = todosList
-          .where((item) => item.todoText!
+          .where((item) => item.taskName
               .toLowerCase()
               .contains(enteredKeyword.toLowerCase()))
           .toList();
@@ -205,7 +159,7 @@ class _HomeState extends State<Home> {
           color: tdBlack,
           size: 30,
         ),
-        Container(
+        SizedBox(
           height: 40,
           width: 40,
           child: ClipRRect(

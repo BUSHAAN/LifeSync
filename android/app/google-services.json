@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "262646141774",
+    "project_id": "lifesync-c26db",
+    "storage_bucket": "lifesync-c26db.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:262646141774:android:322a20744df1fe99df441f",
+        "android_client_info": {
+          "package_name": "com.example.flutter_todo_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhXqJyzauNajYg9CagQSNDVyVyUtISR2M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
