@@ -16,20 +16,14 @@ class _HomePageState extends State<HomePage> {
   final user = FirebaseAuth.instance.currentUser;
 
   void signUserOut() async {
-    await FirebaseAuth.instance.signOut(); }
+    await FirebaseAuth.instance.signOut();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          actions: [
-            IconButton(
-                onPressed: signUserOut,
-                icon: Icon(
-                  Icons.logout,
-                  color: Colors.white,
-                ))
-          ],
+          iconTheme: IconThemeData(color: Colors.white),
           centerTitle: true,
           title: Text(
             "LifeSync",
@@ -38,6 +32,52 @@ class _HomePageState extends State<HomePage> {
             )),
           ),
           backgroundColor: Colors.blue.shade600,
+        ),
+        drawer: Drawer(
+          backgroundColor: Colors.grey.shade100,
+          child: ListView(
+            // Important: Remove any padding from the ListView.
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade300,
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'LifeSync',
+                      style: TextStyle(
+                          fontSize: 50,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                    Text(
+                      "Logged in as ${user!.email!}",
+                      style: TextStyle(fontSize: 15, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              ListTile(
+                title: const Text('All Tasks'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AllTasksPage()),
+                  );
+                },
+              ),
+              ListTile(
+                title: const Text('Sign Out'),
+                onTap: () {
+                  signUserOut();
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
         ),
         floatingActionButton: FloatingActionButton(
           child: Text(
@@ -54,23 +94,7 @@ class _HomePageState extends State<HomePage> {
           },
         ),
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => AllTasksPage()),
-                    );
-                  },
-                  child: Text("all tasks")),
-              SizedBox(
-                height: 50,
-              ),
-              Text("Logged in as " + user!.email!)
-            ],
-          ),
+          
         ));
   }
 }
