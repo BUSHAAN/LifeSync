@@ -61,10 +61,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 //logo
                 SizedBox(height: 30),
                 Icon(
-                  Icons.face,
+                  Icons.person,
                   size: 50,
                 ),
-                Text("Logo here", style: TextStyle(color: Colors.grey[700])),
                 //welcome back
                 SizedBox(height: 30),
 

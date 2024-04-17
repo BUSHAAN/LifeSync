@@ -1,24 +1,24 @@
-enum Schedule { mornings, evenings, workinghours, weekends }
+// enum Schedule { mornings, evenings, workinghours, weekends }
 
-enum Deadline { hardDeadline, softDeadline, noDeadline }
+// enum Deadline { hardDeadline, softDeadline, noDeadline }
 
-enum Priority { high, medium, low }
+// enum Priority { high, medium, low }
 
 class Task {
-  String id;
+  String userId;
   String taskName;
-  double duration; // Assuming hours
+  double? duration; // Assuming hours
   bool allowSplitting;
   double? maxChunkTime; // Assuming hours
-  Priority priority; // Default priority
-  Deadline deadlineType; // Default deadline type
+  String priority; // Default priority
+  String deadlineType; // Default deadline type
   DateTime? deadline;
   DateTime startDate;
-  Schedule schedule;
+  String schedule;
   bool isDone;
 
   Task({
-    required this.id,
+    required this.userId,
     required this.taskName,
     required this.duration, // Assuming hours
     required this.allowSplitting,
@@ -34,14 +34,14 @@ class Task {
   static List<Task> todoList() {
     return [
       Task(
-          id: '01',
+          userId: '01',
           taskName: 'Morning Excercise',
           duration: 1,
           allowSplitting: false,
-          priority: Priority.medium,
-          deadlineType: Deadline.noDeadline,
+          priority: "medium",
+          deadlineType: "noDeadline",
           startDate: DateTime(2024),
-          schedule: Schedule.mornings,
+          schedule: "mornings",
           isDone: true),
       // Task(id: '02', taskName: 'Buy Groceries', isDone: true),
     ];

@@ -3,6 +3,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_todo_app/pages/task_details.dart';
+import 'package:flutter_todo_app/services/get_tasks.dart';
 import 'package:flutter_todo_app/services/get_tasks_list.dart';
 
 class AllTasksPage extends StatefulWidget {
@@ -22,7 +24,11 @@ class _AllTasksPageState extends State<AllTasksPage> {
   List<String> docIDs = [];
 
   Future getDocId() async {
-    await FirebaseFirestore.instance.collection('Tasks').where('userId', isEqualTo: user!.uid).get().then(
+    await FirebaseFirestore.instance
+        .collection('Tasks')
+        .where('userId', isEqualTo: user!.uid)
+        .get()
+        .then(
           (snapshot) => snapshot.docs.forEach((document) {
             docIDs.add(document.reference.id);
           }),
@@ -58,11 +64,22 @@ class _AllTasksPageState extends State<AllTasksPage> {
                 itemCount: docIDs.length,
                 itemBuilder: ((context, index) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     child: Card(
-                      
                       child: ListTile(
-                        onTap: () {},
+                        onTap: () async {
+                          final taskData =
+                              await GetTasks(documentId: docIDs[index])
+                                  .getTaskData();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  TaskDetails(taskData: taskData),
+                            ),
+                          );
+                        },
                         tileColor: Colors.grey.shade200,
                         title: GetTaskList(documentId: docIDs[index]),
                       ),
