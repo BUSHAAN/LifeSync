@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/model/Task.dart';
+import 'package:flutter_todo_app/services/firestore.dart';
 
 class AddTasksPage extends StatefulWidget {
   const AddTasksPage({super.key});
@@ -15,6 +16,7 @@ class AddTasksPage extends StatefulWidget {
 
 class _AddTasksPageState extends State<AddTasksPage> {
   final String _userId = FirebaseAuth.instance.currentUser!.uid;
+  final FireStoreService fireStoreService = FireStoreService();
   final _taskNameController = TextEditingController();
   final _durationController = TextEditingController();
   bool _allowSplitting = false;
@@ -38,39 +40,14 @@ class _AddTasksPageState extends State<AddTasksPage> {
     "late night",
   ];
 
-  Future addTaskDetails(
-    Task task,
-    // String userId,
-    // String taskName,
-    // double duration,
-    // bool allowSplitting,
-    // double? maxChunkTime,
-    // String priority,
-    // String deadlineType,
-    // DateTime? deadline,
-    // DateTime? startDate,
-    // String schedule,
-  ) async {
-    await FirebaseFirestore.instance.collection('Tasks').add({
-      "userId": task.userId,
-      "taskName": task.taskName,
-      "duration": task.duration,
-      "allowSplitting": task.allowSplitting,
-      "maxChunkTime": task.maxChunkTime,
-      "priority": task.priority,
-      "deadlineType": task.deadlineType,
-      "deadline": task.deadline,
-      "startDate": task.startDate,
-      "schedule": task.schedule,
-    });
-    @override
-    void dispose() {
-      _taskNameController.dispose();
-      _durationController.dispose();
-      _maxChunkTimeController.dispose();
-      super.dispose();
-    }
+  @override
+  void dispose() {
+    _taskNameController.dispose();
+    _durationController.dispose();
+    _maxChunkTimeController.dispose();
+    super.dispose();
   }
+
   // Function to show date picker for Deadline
 
   Future<void> _selectDeadlineDate(BuildContext context) async {
@@ -138,19 +115,20 @@ class _AddTasksPageState extends State<AddTasksPage> {
 
   @override
   Widget build(BuildContext context) {
-    Task newTask = Task(  // Create a new Task object
-    userId: _userId,
-    taskName: _taskNameController.text.trim(),
-    duration: double.tryParse(_durationController.text.trim()),
-    allowSplitting: _allowSplitting,
-    maxChunkTime: double.tryParse(_durationController.text.trim()),
-    priority: _priority, // Set default priority
-    deadlineType: _deadlineType, // Set default deadline type
-    startDate: DateTime.now(),
-    schedule: _schedule, // Set default schedule
-    isDone: false,
-  );
-
+    Task newTask = Task(
+      // Create a new Task object
+      userId: _userId,
+      taskName: _taskNameController.text.trim(),
+      duration: double.tryParse(_durationController.text.trim()),
+      allowSplitting: _allowSplitting,
+      maxChunkTime: double.tryParse(_durationController.text.trim()),
+      priority: _priority, // Set default priority
+      deadlineType: _deadlineType,
+      deadline: DateTime.now(), // Set default deadline type
+      startDate: DateTime.now(),
+      schedule: _schedule, // Set default schedule
+      isDone: false,
+    );
 
     // ignore: prefer_const_constructors
     return Scaffold(
@@ -302,19 +280,9 @@ class _AddTasksPageState extends State<AddTasksPage> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    addTaskDetails(
+                    fireStoreService.addTaskDetails(
                       newTask,
-                        // _userId,
-                        // _taskNameController.text.trim(),
-                        // double.parse(_durationController.text.trim()),
-                        // _allowSplitting,
-                        // double.tryParse(_maxChunkTimeController.text.trim()),
-                        // _priority,
-                        // _deadlineType,
-                        // _deadline,
-                        // _startDate,
-                        // _schedule
-                        );
+                    );
                     Navigator.pop(context);
                   },
                   child: Text("Submit"),

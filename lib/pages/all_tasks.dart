@@ -1,8 +1,9 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:flutter/material.dart';
-import '../model/task.dart';
+
 import '../constants/colors.dart';
+import '../model/task.dart';
 import '../widgets/todo_item.dart';
 
 class AllTasks extends StatefulWidget {
@@ -90,7 +91,7 @@ class _AllTasksState extends State<AllTasks> {
 
   void _deleteToDoItem(String id) {
     setState(() {
-      todosList.removeWhere((item) => item.id == id);
+      todosList.removeWhere((item) => item.userId == id);
     });
   }
 
