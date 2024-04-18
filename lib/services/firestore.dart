@@ -57,4 +57,9 @@ class FireStoreService {
     });
     //print(updatedTask.priority);
   }
+
+  Future<void> deleteTask(String docId) async{
+    await tasks.doc(docId).delete();
+  }
 }
+

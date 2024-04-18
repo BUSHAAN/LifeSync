@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_function_literals_in_foreach_calls, use_build_context_synchronously
+// ignore_for_file: avoid_function_literals_in_foreach_calls, use_build_context_synchronously, prefer_const_constructors
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -64,17 +64,60 @@ class _AllTasksPageState extends State<AllTasksPage> {
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     child: Card(
                         child: ListTile(
-                      onTap: () async {
-                        final taskData = await fireStoreService.getTaskData(docId);
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  TaskDetails(taskData: taskData,documentId: docId),
-                            ),
-                          );
-                      },
                       title: Text(taskTitle),
+                      trailing: Wrap(
+                        spacing: 1,
+                        children: [
+                          IconButton(
+                              onPressed: () async {
+                                final taskData =
+                                    await fireStoreService.getTaskData(docId);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TaskDetails(
+                                        taskData: taskData, documentId: docId),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.edit_note)),
+                          IconButton(
+                              onPressed: () async {
+                                final result = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Are you sure?'),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                            'Do you want to permanently delete'),
+                                        Text('"$taskTitle"'),
+                                      ],
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text('Delete'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (result == null || !result) {
+                                  return;
+                                }
+                                await fireStoreService.deleteTask(docId);
+                              },
+                              icon: const Icon(Icons.delete))
+                        ],
+                      ),
                     )),
                   );
                 },
