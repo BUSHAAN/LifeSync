@@ -96,204 +96,202 @@ class _TaskDetailsState extends State<TaskDetails> {
   @override
   void initState() {
     super.initState();
-    //_startDate = widget.taskData['startDate'];
-    // title = widget.taskData['taskName'];
-    // priority = widget.taskData['priority'];
-    // duration = widget.taskData["duration"];
   }
 
   @override
   Widget build(BuildContext context) {
+    // Task newTask = Task(
+    //   // Create a new Task object
+    //   userId: widget.taskData["userId"],
+    //   taskName: widget.taskData["taskName"],
+    //   duration: widget.taskData["duration"],
+    //   allowSplitting: widget.taskData["allowSplitting"],
+    //   maxChunkTime: widget.taskData["maxChunkTime"],
+    //   priority: widget.taskData["priority"], // Set default priority
+    //   deadlineType: widget.taskData["deadlineType"],
+    //   deadline: widget.taskData["deadline"].toDate(),
+    //   startDate: widget.taskData["startDate"].toDate(),
+    //   schedule: widget.taskData["schedule"], // Set default schedule
+    //   isDone: widget.taskData["allowSplitting"],
+    // );
     // ignore: prefer_const_constructors
-    Task newTask = Task(
-      // Create a new Task object
-      userId: widget.taskData["userId"],
-      taskName: widget.taskData["taskName"],
-      duration: widget.taskData["duration"],
-      allowSplitting: widget.taskData["allowSplitting"],
-      maxChunkTime: widget.taskData["maxChunkTime"],
-      priority: widget.taskData["priority"], // Set default priority
-      deadlineType: widget.taskData["deadlineType"],
-      deadline:
-          widget.taskData["deadline"].toDate(), // Set default deadline type
-      startDate: widget.taskData["startDate"].toDate(),
-      schedule: widget.taskData["schedule"], // Set default schedule
-      isDone: widget.taskData["allowSplitting"],
-    );
     return Scaffold(
       appBar: AppBar(
         title: Text("Task Details"),
       ),
       body: SingleChildScrollView(
-          padding: EdgeInsets.all(20.0),
-          child: Form(
-            child: Column(
+        padding: EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            //Task name
+            TextFormField(
+              initialValue: widget.taskData["taskName"],
+              decoration: InputDecoration(labelText: "Task Name"),
+              validator: (value) =>
+                  value!.isEmpty ? "Please enter a task name" : null,
+              onChanged: (newValue) =>
+                  setState(() => widget.taskData["taskName"] = newValue),
+            ),
+            //Duration
+            Row(
               children: [
-                //Task name
-                TextFormField(
-                  controller: TextEditingController(text: newTask.taskName),
-                  decoration: InputDecoration(labelText: "Task Name"),
-                  validator: (value) =>
-                      value!.isEmpty ? "Please enter a task name" : null,
-                      
-                ),
-                //Duration
-                Row(
-                  children: [
-                    Text("Duration (hours): "),
-                    SizedBox(width: 10.0),
-                    Expanded(
-                      child: TextFormField(
-                        controller: TextEditingController(
-                            text: newTask.duration.toString()),
-                        keyboardType: TextInputType.number,
-                        onChanged: (value) => setState(
-                            () => newTask.duration = double.tryParse(value)),
-                        decoration: InputDecoration(hintText: "0.0"),
-                        validator: (value) => double.tryParse(value!) == null
-                            ? "Invalid duration"
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-                // Splitting Checkbox
-                Row(
-                  children: [
-                    Checkbox(
-                      value: newTask.allowSplitting,
-                      onChanged: (value) =>
-                          setState(() => newTask.allowSplitting = value!),
-                    ),
-                    Text("Allow Splitting"),
-                  ],
-                ),
-                // Max Chunk Time (if splitting allowed)
-                Visibility(
-                  visible: newTask.allowSplitting,
-                  child: Row(
-                    children: [
-                      Text("Max Chunk Time (hours): "),
-                      SizedBox(width: 10.0),
-                      Expanded(
-                        child: TextFormField(
-                          controller: TextEditingController(
-                              text: newTask.maxChunkTime.toString()),
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(hintText: "0.0"),
-                          validator: (value) => double.tryParse(value!) == null
-                              ? "Invalid duration"
-                              : null,
-                          enabled: newTask.allowSplitting,
-                        ),
-                      ),
-                    ],
+                Text("Duration (hours): "),
+                SizedBox(width: 10.0),
+                Expanded(
+                  child: TextFormField(
+                    controller: TextEditingController(
+                        text: widget.taskData["duration"].toString()),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) => setState(() =>
+                        widget.taskData["duration"] = double.tryParse(value)),
+                    decoration: InputDecoration(hintText: "0.0"),
+                    validator: (value) => double.tryParse(value!) == null
+                        ? "Invalid duration"
+                        : null,
                   ),
-                ),
-                // Priority Dropdown
-                DropdownButtonFormField<String>(
-                    decoration: InputDecoration(labelText: "Priority"),
-                    value: newTask.priority,
-                    items: _priorities
-                        .map((priority) => DropdownMenuItem<String>(
-                              value: priority,
-                              child: Text(priority),
-                            ))
-                        .toList(),
-                    onChanged: (value) =>
-                        setState(() => newTask.priority = value!)),
-                // Deadline Type Dropdown
-                DropdownButtonFormField<String>(
-                    decoration: InputDecoration(labelText: "Deadline Type"),
-                    value: newTask.deadlineType,
-                    items: _deadlineTypes
-                        .map((deadlineType) => DropdownMenuItem<String>(
-                              value: deadlineType,
-                              child: Text(deadlineType),
-                            ))
-                        .toList(),
-                    onChanged: (value) =>
-                        setState(() => newTask.deadlineType = value!)),
-                // Deadline Date Picker
-                Visibility(
-                  visible: (newTask.deadlineType != "no deadline"),
-                  child: Row(
-                    children: [
-                      Text("Deadline: "),
-                      TextButton(
-                        onPressed: () {
-                          _selectDeadlineDate(context);
-                          newTask.deadline = _deadline;
-                        },
-                        child: Row(
-                          children: [
-                            Icon(
-                                Icons.calendar_today_outlined), // Calendar icon
-                            SizedBox(width: 5.0),
-                            Text(newTask.deadline.toString().substring(0, 10) ??
-                                "Set date"),
-                          ],
-                        ), // Display only date part
-                      ),
-                      SizedBox(width: 10.0),
-                      TextButton(
-                        onPressed: () => _selectDeadlineTime(context),
-                        child: Row(
-                          children: [
-                            Icon(Icons.access_time_outlined),
-                            SizedBox(width: 5.0),
-                            Text(newTask.deadline
-                                    ?.toString()
-                                    .substring(11, 16) ??
-                                "Set time"),
-                          ],
-                        ), // Display only time part
-                      ),
-                    ],
-                  ),
-                ),
-                // Start Date Date Picker
-                Row(
-                  children: [
-                    Text("Start Date: "),
-                    TextButton(
-                      onPressed: () {
-                        _selectStartDate(context);
-                      },
-                      child: Row(
-                        children: [
-                          Icon(Icons.calendar_today_outlined),
-                          SizedBox(width: 5.0),
-                          Text(newTask.startDate?.toString() ?? "Set date"),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                DropdownButtonFormField<String>(
-                    decoration: InputDecoration(labelText: "Schedule "),
-                    value: newTask.schedule,
-                    items: _schedules
-                        .map((schedule) => DropdownMenuItem<String>(
-                              value: schedule,
-                              child: Text(schedule),
-                            ))
-                        .toList(),
-                    onChanged: (value) =>
-                        setState(() => newTask.schedule = value!)),
-                SizedBox(
-                  height: 20,
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    fireStoreService.updateTask(widget.documentId, newTask);
-                    Navigator.pop(context);
-                  },
-                  child: Text("Save Changes"),
                 ),
               ],
             ),
-          )),
+            // Splitting Checkbox
+            Row(
+              children: [
+                Checkbox(
+                  value: widget.taskData["allowSplitting"],
+                  onChanged: (value) => setState(
+                      () => widget.taskData["allowSplitting"] = value!),
+                ),
+                Text("Allow Splitting"),
+              ],
+            ),
+            // Max Chunk Time (if splitting allowed)
+            Visibility(
+              visible: widget.taskData["allowSplitting"],
+              child: Row(
+                children: [
+                  Text("Max Chunk Time (hours): "),
+                  SizedBox(width: 10.0),
+                  Expanded(
+                    child: TextFormField(
+                      controller: TextEditingController(
+                          text: widget.taskData["maxChunkTime"].toString()),
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(hintText: "0.0"),
+                      validator: (value) => double.tryParse(value!) == null
+                          ? "Invalid duration"
+                          : null,
+                      enabled: widget.taskData["allowSplitting"],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Priority Dropdown
+            DropdownButtonFormField<String>(
+                decoration: InputDecoration(labelText: "Priority"),
+                value: widget.taskData["priority"],
+                items: _priorities
+                    .map((priority) => DropdownMenuItem<String>(
+                          value: priority,
+                          child: Text(priority),
+                        ))
+                    .toList(),
+                onChanged: (value) =>
+                    setState(() => widget.taskData["priority"] = value!)),
+            // Deadline Type Dropdown
+            DropdownButtonFormField<String>(
+                decoration: InputDecoration(labelText: "Deadline Type"),
+                value: widget.taskData["deadlineType"],
+                items: _deadlineTypes
+                    .map((deadlineType) => DropdownMenuItem<String>(
+                          value: deadlineType,
+                          child: Text(deadlineType),
+                        ))
+                    .toList(),
+                onChanged: (value) =>
+                    setState(() => widget.taskData["deadlineType"] = value!)),
+            // Deadline Date Picker
+            Visibility(
+              visible: (widget.taskData["deadlineType"] != "no deadline"),
+              child: Row(
+                children: [
+                  Text("Deadline: "),
+                  TextButton(
+                    onPressed: () {
+                      _selectDeadlineDate(context);
+                    },
+                    child: Row(
+                      children: [
+                        Icon(Icons.calendar_today_outlined), // Calendar icon
+                        SizedBox(width: 5.0),
+                        Text(widget.taskData["deadline"].toDate()
+                                ?.toString()
+                                .substring(0, 10) ??
+                            "Set date"),
+                      ],
+                    ), // Display only date part
+                  ),
+                  SizedBox(width: 10.0),
+                  TextButton(
+                    onPressed: () => _selectDeadlineTime(context),
+                    child: Row(
+                      children: [
+                        Icon(Icons.access_time_outlined),
+                        SizedBox(width: 5.0),
+                        Text(widget.taskData["deadline"].toDate()
+                                ?.toString()
+                                .substring(11, 16) ??
+                            "Set time"),
+                      ],
+                    ), // Display only time part
+                  ),
+                ],
+              ),
+            ),
+            // Start Date Date Picker
+            Row(
+              children: [
+                Text("Start Date: "),
+                TextButton(
+                  onPressed: () {
+                    _selectStartDate(context);
+                  },
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_today_outlined),
+                      SizedBox(width: 5.0),
+                      Text(widget.taskData["startDate"].toDate()?.toString() ??
+                          "Set date"),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            DropdownButtonFormField<String>(
+                decoration: InputDecoration(labelText: "Schedule "),
+                value: widget.taskData["schedule"],
+                items: _schedules
+                    .map((schedule) => DropdownMenuItem<String>(
+                          value: schedule,
+                          child: Text(schedule),
+                        ))
+                    .toList(),
+                onChanged: (value) =>
+                    setState(() => widget.taskData["schedule"] = value!)),
+            SizedBox(
+              height: 20,
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                print(widget.taskData['deadline']);
+                await fireStoreService.updateTask(
+                    widget.documentId, widget.taskData);
+                Navigator.pop(context);
+              },
+              child: Text("Save Changes"),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

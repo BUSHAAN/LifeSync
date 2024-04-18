@@ -24,7 +24,7 @@ class _AddTasksPageState extends State<AddTasksPage> {
   String _priority = "";
   String _deadlineType = "";
   DateTime? _deadline;
-  DateTime? _startDate;
+  DateTime _startDate = DateTime.now();
   String _schedule = "";
 
   final List<String> _priorities = ["high", "medium", "low"];
@@ -60,10 +60,7 @@ class _AddTasksPageState extends State<AddTasksPage> {
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
-    if (pickedDate != null &&
-        (pickedDate.year != _deadline?.year ||
-            pickedDate.month != _deadline?.month ||
-            pickedDate.day != _deadline?.day)) {
+    if (pickedDate != null ) {
       setState(() {
         // Update only the date part of _deadline
         _deadline = DateTime(
@@ -124,8 +121,8 @@ class _AddTasksPageState extends State<AddTasksPage> {
       maxChunkTime: double.tryParse(_durationController.text.trim()),
       priority: _priority, // Set default priority
       deadlineType: _deadlineType,
-      deadline: DateTime.now(), // Set default deadline type
-      startDate: DateTime.now(),
+      deadline: _deadline, // Set default deadline type
+      startDate: _startDate,
       schedule: _schedule, // Set default schedule
       isDone: false,
     );

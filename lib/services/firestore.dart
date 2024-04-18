@@ -41,20 +41,20 @@ class FireStoreService {
     }
   }
 
-  Future<void> updateTask(String docId, Task updatedTask) async {
+  Future<void> updateTask(String docId, Map<String,dynamic> updatedTask) async {
     await tasks.doc(docId).update({
-      'userId': updatedTask.userId, // Assuming you have a userId field
-      'taskName': updatedTask.taskName,
-      'duration': updatedTask.duration,
-      'allowSplitting': updatedTask.allowSplitting,
-      'maxChunkTime': updatedTask.maxChunkTime,
-      'priority': updatedTask.priority,
-      'deadlineType': updatedTask.deadlineType,
-      'deadline': updatedTask.deadline, // Convert to ISO 8601 format
-      'startDate': updatedTask.startDate, // Convert to ISO 8601 format
-      'schedule': updatedTask.schedule,
-      'isDone': updatedTask.isDone, // Assuming you have an isDone field
+      'userId': updatedTask['userId'], // Assuming you have a userId field
+      'taskName': updatedTask['taskName'],
+      'duration': updatedTask['duration'],
+      'allowSplitting': updatedTask['allowSplitting'],
+      'maxChunkTime': updatedTask['maxChunkTime'],
+      'priority': updatedTask['priority'],
+      'deadlineType': updatedTask['deadlineType'],
+      'deadline': updatedTask['deadline'], // Convert to ISO 8601 format
+      'startDate': updatedTask['startDate'], // Convert to ISO 8601 format
+      'schedule': updatedTask['schedule'],
+      'isDone': updatedTask['isDone'], // Assuming you have an isDone field
     });
-    print(updatedTask.priority);
+    //print(updatedTask.priority);
   }
 }
