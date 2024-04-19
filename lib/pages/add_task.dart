@@ -128,7 +128,7 @@ class _AddTasksPageState extends State<AddTasksPage> {
     // ignore: prefer_const_constructors
     return Scaffold(
       appBar: AppBar(
-        title: Text("Task Details"),
+        title: Text("Add New Task"),
       ),
       body: SingleChildScrollView(
           padding: EdgeInsets.all(20.0),
@@ -280,7 +280,7 @@ class _AddTasksPageState extends State<AddTasksPage> {
                     );
                     Navigator.pop(context);
                   },
-                  child: Text("Submit"),
+                  child: Text("Add Task"),
                 ),
               ],
             ),

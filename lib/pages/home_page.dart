@@ -3,6 +3,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/pages/add_task.dart';
+import 'package:flutter_todo_app/pages/all_events_page.dart';
 import 'package:flutter_todo_app/pages/all_tasks_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -66,6 +67,16 @@ class _HomePageState extends State<HomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => AllTasksPage()),
+                  );
+                },
+              ),
+              ListTile(
+                title: const Text('All Events'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AllEventsPage()),
                   );
                 },
               ),

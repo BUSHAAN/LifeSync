@@ -175,7 +175,6 @@ class _TaskDetailsState extends State<TaskDetails> {
                       controller: TextEditingController(
                           text: widget.taskData["maxChunkTime"].toString()),
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(hintText: "0.0"),
                       validator: (value) => double.tryParse(value!) == null
                           ? "Invalid duration"
                           : null,
@@ -282,7 +281,6 @@ class _TaskDetailsState extends State<TaskDetails> {
             ),
             ElevatedButton(
               onPressed: () async {
-                print(widget.taskData['deadline']);
                 await fireStoreService.updateTask(
                     widget.documentId, widget.taskData);
                 Navigator.pop(context);
