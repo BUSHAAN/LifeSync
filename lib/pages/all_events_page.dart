@@ -66,7 +66,15 @@ class _AllEventsPageState extends State<AllEventsPage> {
                         children: [
                           IconButton(
                               onPressed: () async {
-                                
+                                final eventData =
+                                    await fireStoreService.getEventData(docId);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EventDetails(
+                                        eventData: eventData, documentId: docId),
+                                  ),
+                                );
                               },
                               icon: const Icon(Icons.edit_note)),
                           IconButton(

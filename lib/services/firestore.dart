@@ -42,7 +42,6 @@ class FireStoreService {
     if (snapshot.exists) {
       return snapshot.data() as Map<String, dynamic>;
     } else {
-      //print('No task found for document ID: $documentId');
       return {}; // Return an empty map if document doesn't exist
     }
   }
@@ -62,7 +61,6 @@ class FireStoreService {
       'schedule': updatedTask['schedule'],
       'isDone': updatedTask['isDone'], // Assuming you have an isDone field
     });
-    //print(updatedTask.priority);
   }
 
   Future<void> deleteTask(String docId) async {
@@ -82,7 +80,7 @@ class FireStoreService {
     });
   }
 
-    Stream<QuerySnapshot> getEventStream(userId) {
+  Stream<QuerySnapshot> getEventStream(userId) {
     final eventStream = events
         .where('userId', isEqualTo: userId)
         //.orderBy('startDate', descending: true)
@@ -90,7 +88,30 @@ class FireStoreService {
     return eventStream;
   }
 
-    Future<void> deleteEvent(String docId) async {
+  Future<Map<String, dynamic>> getEventData(documentId) async {
+    final docRef =
+        FirebaseFirestore.instance.collection('Events').doc(documentId);
+    final snapshot = await docRef.get();
+    if (snapshot.exists) {
+      return snapshot.data() as Map<String, dynamic>;
+    } else {
+      return {}; // Return an empty map if document doesn't exist
+    }
+  }
+
+    Future<void> updateEvent(
+      String docId, Map<String, dynamic> updatedEvent) async {
+    await events.doc(docId).update({
+      'userId': updatedEvent['userId'], // Assuming you have a userId field
+      'eventName': updatedEvent['eventName'],
+      'startTime': updatedEvent['startTime'],
+      'endTime': updatedEvent['endTime'],
+      'frequency': updatedEvent['frequency'],
+      'selectedWeekdays': updatedEvent['selectedWeekdays'],
+    });
+  }
+
+  Future<void> deleteEvent(String docId) async {
     await events.doc(docId).delete();
   }
 }

@@ -100,20 +100,6 @@ class _TaskDetailsState extends State<TaskDetails> {
 
   @override
   Widget build(BuildContext context) {
-    // Task newTask = Task(
-    //   // Create a new Task object
-    //   userId: widget.taskData["userId"],
-    //   taskName: widget.taskData["taskName"],
-    //   duration: widget.taskData["duration"],
-    //   allowSplitting: widget.taskData["allowSplitting"],
-    //   maxChunkTime: widget.taskData["maxChunkTime"],
-    //   priority: widget.taskData["priority"], // Set default priority
-    //   deadlineType: widget.taskData["deadlineType"],
-    //   deadline: widget.taskData["deadline"].toDate(),
-    //   startDate: widget.taskData["startDate"].toDate(),
-    //   schedule: widget.taskData["schedule"], // Set default schedule
-    //   isDone: widget.taskData["allowSplitting"],
-    // );
     // ignore: prefer_const_constructors
     return Scaffold(
       appBar: AppBar(
