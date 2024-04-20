@@ -22,7 +22,7 @@ class _AddTasksPageState extends State<AddTasksPage> {
   String _priority = "";
   String _deadlineType = "";
   DateTime? _deadline;
-  DateTime _startDate = DateTime.now();
+  DateTime? _startDate;
   String _schedule = "";
 
   final List<String> _priorities = ["high", "medium", "low"];
@@ -58,7 +58,7 @@ class _AddTasksPageState extends State<AddTasksPage> {
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
-    if (pickedDate != null ) {
+    if (pickedDate != null) {
       setState(() {
         // Update only the date part of _deadline
         _deadline = DateTime(
@@ -255,7 +255,7 @@ class _AddTasksPageState extends State<AddTasksPage> {
                         children: [
                           Icon(Icons.calendar_today_outlined),
                           SizedBox(width: 5.0),
-                          Text(_startDate?.toString() ?? "Set date"),
+                          Text(_startDate?.toString().substring(0, 10) ?? "Set date"),
                         ],
                       ),
                     ),

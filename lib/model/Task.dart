@@ -13,7 +13,7 @@ class Task {
   String priority; // Default priority
   String deadlineType; // Default deadline type
   DateTime? deadline;
-  DateTime startDate;
+  DateTime? startDate;
   String schedule;
   bool isDone;
 

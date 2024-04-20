@@ -1,14 +1,15 @@
 // ignore_for_file: prefer_const_constructors
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_todo_app/model/Task.dart';
 import 'package:flutter_todo_app/services/firestore.dart';
 
 class TaskDetails extends StatefulWidget {
   final Map<String, dynamic> taskData;
   final String documentId;
 
-  const TaskDetails({super.key, required this.taskData, required this.documentId});
+  const TaskDetails(
+      {super.key, required this.taskData, required this.documentId});
 
   @override
   State<TaskDetails> createState() => _TaskDetailsState();
@@ -30,14 +31,19 @@ class _TaskDetailsState extends State<TaskDetails> {
     "after hours",
     "late night",
   ];
+
+  @override
+  void initState() {
+    _startDate = (widget.taskData['startDate'] as Timestamp).toDate();
+    _deadline = (widget.taskData['deadline'] as Timestamp).toDate();
+    super.initState();
+  }
+
   Future<void> _selectDeadlineDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: _deadline?.year != null
-          ? DateTime(
-              _deadline?.year ?? 0, _deadline?.month ?? 0, _deadline?.day ?? 0)
-          : DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: _deadline,
+      firstDate: DateTime(2024),
       lastDate: DateTime(2100),
     );
     if (pickedDate != null &&
@@ -60,8 +66,8 @@ class _TaskDetailsState extends State<TaskDetails> {
   Future<void> _selectStartDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: _startDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: _startDate,
+      firstDate: DateTime(2024),
       lastDate: DateTime(2100),
     );
     if (pickedDate != null && pickedDate != _startDate) {
@@ -82,7 +88,6 @@ class _TaskDetailsState extends State<TaskDetails> {
         (pickedTime.hour != _deadline?.hour ||
             pickedTime.minute != _deadline?.minute)) {
       setState(() {
-        // Update only the time part of _deadline
         _deadline = DateTime(
             _deadline?.year ?? DateTime.now().year,
             _deadline?.month ?? DateTime.now().month,
@@ -91,11 +96,6 @@ class _TaskDetailsState extends State<TaskDetails> {
             pickedTime.minute);
       });
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
   }
 
   @override
@@ -201,16 +201,12 @@ class _TaskDetailsState extends State<TaskDetails> {
                 children: [
                   Text("Deadline: "),
                   TextButton(
-                    onPressed: () {
-                      _selectDeadlineDate(context);
-                    },
+                    onPressed: () => _selectDeadlineDate(context),
                     child: Row(
                       children: [
                         Icon(Icons.calendar_today_outlined), // Calendar icon
                         SizedBox(width: 5.0),
-                        Text(widget.taskData["deadline"].toDate()
-                                ?.toString()
-                                .substring(0, 10) ??
+                        Text(_deadline?.toString().substring(0, 10) ??
                             "Set date"),
                       ],
                     ), // Display only date part
@@ -222,7 +218,7 @@ class _TaskDetailsState extends State<TaskDetails> {
                       children: [
                         Icon(Icons.access_time_outlined),
                         SizedBox(width: 5.0),
-                        Text(widget.taskData["deadline"].toDate()
+                        Text(_deadline
                                 ?.toString()
                                 .substring(11, 16) ??
                             "Set time"),
@@ -237,14 +233,12 @@ class _TaskDetailsState extends State<TaskDetails> {
               children: [
                 Text("Start Date: "),
                 TextButton(
-                  onPressed: () {
-                    _selectStartDate(context);
-                  },
+                  onPressed: () => _selectStartDate(context),
                   child: Row(
                     children: [
                       Icon(Icons.calendar_today_outlined),
                       SizedBox(width: 5.0),
-                      Text(widget.taskData["startDate"].toDate()?.toString() ??
+                      Text(_startDate?.toString().substring(0, 10) ??
                           "Set date"),
                     ],
                   ),
@@ -267,6 +261,8 @@ class _TaskDetailsState extends State<TaskDetails> {
             ),
             ElevatedButton(
               onPressed: () async {
+                widget.taskData['deadline'] = _deadline;
+                widget.taskData['startDate'] = _startDate;
                 await fireStoreService.updateTask(
                     widget.documentId, widget.taskData);
                 Navigator.pop(context);

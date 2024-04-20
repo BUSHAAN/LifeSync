@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors, prefer_final_fields
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/services/firestore.dart';
 
@@ -20,9 +21,23 @@ class _EventDetailsState extends State<EventDetails> {
   List<dynamic> _selectedWeekdays = [];
   final List<String> _frequencies = ["Daily", "Weekly", "One-Time"];
 
+@override
+  void initState() {
+    _startTime = (widget.eventData['startTime'] as Timestamp).toDate();
+    _endTime = (widget.eventData['endTime'] as Timestamp).toDate();
+    super.initState();
+  }
+
+
+
+
   Future<void> _selectStartTime(BuildContext context) async {
     final TimeOfDay? pickedTime = await showTimePicker(
-        context: context, initialTime: widget.eventData['startTime']);
+      context: context,
+      initialTime: _startTime != null
+          ? TimeOfDay.fromDateTime(_startTime!)
+          : TimeOfDay.now(),
+    );
     if (pickedTime != null &&
         (pickedTime.hour != _startTime?.hour ||
             pickedTime.minute != _startTime?.minute)) {
@@ -34,14 +49,16 @@ class _EventDetailsState extends State<EventDetails> {
             _startTime?.day ?? DateTime.now().day,
             pickedTime.hour,
             pickedTime.minute);
-        widget.eventData['startTime'] = _startTime;
       });
     }
   }
 
   Future<void> _selectEndTime(BuildContext context) async {
     final TimeOfDay? pickedTime = await showTimePicker(
-        context: context, initialTime: widget.eventData['endTime']);
+        context: context,
+        initialTime: _endTime != null
+            ? TimeOfDay.fromDateTime(_endTime!)
+            : TimeOfDay.now());
     if (pickedTime != null &&
         (pickedTime.hour != _endTime?.hour ||
             pickedTime.minute != _endTime?.minute)) {
@@ -53,7 +70,6 @@ class _EventDetailsState extends State<EventDetails> {
             _endTime?.day ?? DateTime.now().day,
             pickedTime.hour,
             pickedTime.minute);
-            widget.eventData['endTime'] = _endTime;
       });
     }
   }
@@ -97,10 +113,7 @@ class _EventDetailsState extends State<EventDetails> {
                         children: [
                           Icon(Icons.access_time_outlined),
                           SizedBox(width: 5.0),
-                          Text(widget.eventData["startTime"]
-                                  .toDate()
-                                  ?.toString()
-                                  .substring(10, 16) ??
+                          Text(_startTime?.toString().substring(10, 16) ??
                               "--:--"),
                         ],
                       ), // Display only time part
@@ -122,10 +135,7 @@ class _EventDetailsState extends State<EventDetails> {
                         children: [
                           Icon(Icons.access_time_outlined),
                           SizedBox(width: 5.0),
-                          Text(widget.eventData["endTime"]
-                                  .toDate()
-                                  ?.toString()
-                                  .substring(10, 16) ??
+                          Text(_endTime?.toString().substring(10, 16) ??
                               "--:--"),
                         ],
                       ), // Display only time part
@@ -279,11 +289,13 @@ class _EventDetailsState extends State<EventDetails> {
                     ],
                   ),
                 ElevatedButton(
-                    onPressed: () {
-                      //fireStoreService.update(newEvent);
+                    onPressed: () async {
+                      widget.eventData['startTime'] = _startTime;
+                      widget.eventData['endTime'] = _endTime;
+                      await fireStoreService.updateEvent(widget.documentId,widget.eventData);
                       Navigator.pop(context);
                     },
-                    child: Text('Add Event'))
+                    child: Text('Save Changes'))
               ],
             ),
           ),
