@@ -32,10 +32,10 @@ class _AddTasksPageState extends State<AddTasksPage> {
     "no deadline"
   ];
   final List<String> _schedules = [
-    "mornings",
-    "daytime",
-    "after hours",
-    "late night",
+    "Morning",
+    "Afternoon",
+    "Evening",
+    "Late Night",
   ];
 
   @override
@@ -83,6 +83,21 @@ class _AddTasksPageState extends State<AddTasksPage> {
       setState(() {
         _startDate = pickedDate;
       });
+    }
+  }
+
+  Widget _viewSchedules(deadlineType) {
+    switch (deadlineType) {
+      case "Morning":
+        return Text("Morning (7am - 12am)");
+      case "Afternoon":
+        return Text("Afternoon (12am - 4pm)");
+      case "Evening":
+        return Text("Evening (4pm - 21pm)");
+      case "Late Night":
+        return Text("Late Night (21pm - 12pm)");
+      default:
+        return Text("Error");
     }
   }
 
@@ -255,7 +270,8 @@ class _AddTasksPageState extends State<AddTasksPage> {
                         children: [
                           Icon(Icons.calendar_today_outlined),
                           SizedBox(width: 5.0),
-                          Text(_startDate?.toString().substring(0, 10) ?? "Set date"),
+                          Text(_startDate?.toString().substring(0, 10) ??
+                              "Set date"),
                         ],
                       ),
                     ),
@@ -266,7 +282,7 @@ class _AddTasksPageState extends State<AddTasksPage> {
                     items: _schedules
                         .map((schedule) => DropdownMenuItem<String>(
                               value: schedule,
-                              child: Text(schedule),
+                              child: _viewSchedules(schedule),
                             ))
                         .toList(),
                     onChanged: (value) => setState(() => _schedule = value!)),

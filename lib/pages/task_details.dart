@@ -26,10 +26,10 @@ class _TaskDetailsState extends State<TaskDetails> {
     "no deadline"
   ];
   final List<String> _schedules = [
-    "mornings",
-    "daytime",
-    "after hours",
-    "late night",
+    "Morning",
+    "Afternoon",
+    "Evening",
+    "Late Night",
   ];
 
   @override
