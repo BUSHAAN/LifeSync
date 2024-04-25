@@ -2,7 +2,6 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_todo_app/model/task_view_model.dart';
 import 'package:flutter_todo_app/pages/all_events_page.dart';
 import 'package:flutter_todo_app/pages/all_tasks_page.dart';
 import 'package:flutter_todo_app/pages/scheduling_section.dart';
@@ -23,6 +22,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
         appBar: AppBar(
           iconTheme: IconThemeData(color: Colors.white),
@@ -92,7 +92,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         body: Center(
-          
+          child: SchedulingSection(),
         ));
   }
 }
