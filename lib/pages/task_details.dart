@@ -30,12 +30,17 @@ class _TaskDetailsState extends State<TaskDetails> {
     "Afternoon",
     "Evening",
     "Late Night",
+    "Any",
   ];
 
   @override
   void initState() {
-    _startDate = (widget.taskData['startDate'] as Timestamp).toDate();
-    _deadline = (widget.taskData['deadline'] as Timestamp).toDate();
+    _startDate = widget.taskData['startDate'] != null
+        ? (widget.taskData['startDate'] as Timestamp).toDate()
+        : null;
+    _deadline = widget.taskData['deadline'] != null
+        ? (widget.taskData['deadline'] as Timestamp).toDate()
+        : null;
     super.initState();
   }
 
@@ -218,9 +223,7 @@ class _TaskDetailsState extends State<TaskDetails> {
                       children: [
                         Icon(Icons.access_time_outlined),
                         SizedBox(width: 5.0),
-                        Text(_deadline
-                                ?.toString()
-                                .substring(11, 16) ??
+                        Text(_deadline?.toString().substring(11, 16) ??
                             "Set time"),
                       ],
                     ), // Display only time part

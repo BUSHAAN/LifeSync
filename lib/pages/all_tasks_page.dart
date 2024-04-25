@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_todo_app/pages/add_task.dart';
 import 'package:flutter_todo_app/pages/task_details.dart';
 import 'package:flutter_todo_app/services/firestore.dart';
 
@@ -31,6 +32,20 @@ class _AllTasksPageState extends State<AllTasksPage> {
             )),
           ),
           backgroundColor: Colors.blue.shade600,
+        ),
+        floatingActionButton: FloatingActionButton(
+          child: Text(
+            '+',
+            style: TextStyle(
+              fontSize: 40,
+            ),
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AddTasksPage()),
+            );
+          },
         ),
         body: StreamBuilder<QuerySnapshot>(
           stream: fireStoreService.getTasksStream(user!.uid),

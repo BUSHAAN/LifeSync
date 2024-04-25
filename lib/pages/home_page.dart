@@ -2,9 +2,10 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_todo_app/pages/add_task.dart';
+import 'package:flutter_todo_app/model/task_view_model.dart';
 import 'package:flutter_todo_app/pages/all_events_page.dart';
 import 'package:flutter_todo_app/pages/all_tasks_page.dart';
+import 'package:flutter_todo_app/pages/scheduling_section.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -89,20 +90,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          child: Text(
-            '+',
-            style: TextStyle(
-              fontSize: 40,
-            ),
-          ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => AddTasksPage()),
-            );
-          },
         ),
         body: Center(
           
