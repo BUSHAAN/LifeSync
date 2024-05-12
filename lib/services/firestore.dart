@@ -1,7 +1,8 @@
 // ignore_for_file: avoid_print, prefer_interpolation_to_compose_strings
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_todo_app/model/Task.dart';
+import 'package:flutter_todo_app/model/daily_item.dart';
+import 'package:flutter_todo_app/model/task.dart';
 import 'package:flutter_todo_app/model/event.dart';
 
 class FireStoreService {
@@ -9,6 +10,8 @@ class FireStoreService {
       FirebaseFirestore.instance.collection("Tasks");
   final CollectionReference events =
       FirebaseFirestore.instance.collection("Events");
+    final CollectionReference dailyItems =
+      FirebaseFirestore.instance.collection("DailyItems");
 
   Future<void> addTaskDetails(
     Task task,
@@ -114,4 +117,17 @@ class FireStoreService {
   Future<void> deleteEvent(String docId) async {
     await events.doc(docId).delete();
   }
+
+Future<void> addDailyItemDetails(
+    DailyItem dailyItem,
+  ) async {
+    await FirebaseFirestore.instance.collection('Tasks').add({
+      "itemName": dailyItem.itemName,
+      "userId": dailyItem.userId,
+      "duration": dailyItem.duration,
+      "isEvent":dailyItem.isEvent,
+      "datetime":dailyItem.dateTime
+    });
+  }
+
 }
