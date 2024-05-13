@@ -1,7 +1,12 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:time_planner/time_planner.dart';
+import 'package:flutter_todo_app/model/daily_item.dart';
+import 'package:flutter_todo_app/model/daily_item_data_source.dart';
+import 'package:flutter_todo_app/services/firestore.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class SchedulingSection extends StatefulWidget {
   const SchedulingSection({super.key});
@@ -11,113 +16,91 @@ class SchedulingSection extends StatefulWidget {
 }
 
 class _SchedulingSectionState extends State<SchedulingSection> {
-  List<TimePlannerTask> tasks = [
-    TimePlannerTask(
-        // background color for task
-        color: Colors.green,
-        // day: Index of header, hour: Task will be begin at this hour
-        // minutes: Task will be begin at this minutes
-        dateTime: TimePlannerDateTime(day: 0, hour: 7, minutes: 30),
-        // Minutes duration of task
-        minutesDuration: 120,
-        // Days duration of task (use for multi days task)
-        daysDuration: 1,
-        onTap: () {},
-        child: 'Sports Practise'),
-    TimePlannerTask(
-        // background color for task
-        color: Colors.blue.shade600,
-        // day: Index of header, hour: Task will be begin at this hour
-        // minutes: Task will be begin at this minutes
-        dateTime: TimePlannerDateTime(day: 1, hour: 8, minutes: 00),
-        // Minutes duration of task
-        minutesDuration: 180,
-        // Days duration of task (use for multi days task)
-        daysDuration: 1,
-        onTap: () {},
-        child: 'CS lecture'),
-    TimePlannerTask(
-      // background color for task
-      color: Colors.green,
-      // day: Index of header, hour: Task will be begin at this hour
-      // minutes: Task will be begin at this minutes
-      dateTime: TimePlannerDateTime(day: 1, hour: 12, minutes: 30),
-      // Minutes duration of task
-      minutesDuration: 100,
-      // Days duration of task (use for multi days task)
-      daysDuration: 1,
-      onTap: () {},
-      child: 'Go to the market',
-    ),
-    TimePlannerTask(
-      // background color for task
-      color: Colors.green,
-      // day: Index of header, hour: Task will be begin at this hour
-      // minutes: Task will be begin at this minutes
-      dateTime: TimePlannerDateTime(day: 2, hour: 10, minutes: 30),
-      // Minutes duration of task
-      minutesDuration: 100,
-      // Days duration of task (use for multi days task)
-      daysDuration: 1,
-      onTap: () {},
-      child: 'Fix the wifi',
-    ),
-  ];
+  final user = FirebaseAuth.instance.currentUser;
+  FireStoreService fireStoreService = FireStoreService();
+  void calendarTapped(CalendarTapDetails calendarTapDetails) {
+    if (_controller.view == CalendarView.month &&
+        calendarTapDetails.targetElement == CalendarElement.calendarCell) {
+      _controller.view = CalendarView.day;
+    } else if ((_controller.view == CalendarView.week ||
+            _controller.view == CalendarView.workWeek) &&
+        calendarTapDetails.targetElement == CalendarElement.viewHeader) {
+      _controller.view = CalendarView.day;
+    }
+  }
+
+  final CalendarController _controller = CalendarController();
+  Color? _headerColor, _viewHeaderColor, _calendarColor;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: TimePlanner(
-        // time will be start at this hour on table
-        startHour: 6,
-        // time will be end at this hour on table
-        endHour: 23,
-        use24HourFormat: true,
-        // each header is a column and a day
-        headers: [
-          TimePlannerTitle(
-            date: "21/4/2024",
-            title: "Sunday",
-          ),
-          TimePlannerTitle(
-            date: "22/4/2024",
-            title: "Monday",
-          ),
-          TimePlannerTitle(
-            date: "23/4/2024",
-            title: "Tuesday",
-          ),
-          TimePlannerTitle(
-            date: "24/4/2024",
-            title: "Wednesday",
-          ),
-          TimePlannerTitle(
-            date: "25/4/2024",
-            title: "Thursday",
-          ),
-          TimePlannerTitle(
-            date: "26/4/2024",
-            title: "Friday",
-          ),
-          TimePlannerTitle(
-            date: "27/4/2024",
-            title: "Saturday",
-          ),
-        ],
-        // List of task will be show on the time planner
-        tasks: tasks,
-        style: TimePlannerStyle(
-            //backgroundColor: Colors.white70,
-            // default value for height is 80
-            //cellHeight: 60,
-            // default value for width is 90
-            //cellWidth: 60,
-            //dividerColor: Colors.white,
-            //showScrollBar: true,
-            //horizontalTaskPadding: 5,
-            //borderRadius: const BorderRadius.all(Radius.circular(8)),
-            ),
-      ),
-    );
+        body: SfCalendar(
+      view: CalendarView.week,
+      allowedViews: [
+        CalendarView.day,
+        CalendarView.week,
+        CalendarView.month,
+      ],
+      viewHeaderStyle: ViewHeaderStyle(backgroundColor: _viewHeaderColor),
+      backgroundColor: _calendarColor,
+      controller: _controller,
+      initialDisplayDate: DateTime.now(),
+      dataSource: MeetingDataSource(_getDataSource()),
+      onTap: calendarTapped,
+      monthViewSettings: MonthViewSettings(
+          navigationDirection: MonthNavigationDirection.vertical),
+    ));
+  }
+
+  List<Meeting> _getDataSource() {
+    final List<Meeting> meetings = <Meeting>[];
+    final DateTime today = DateTime.now();
+    final DateTime startTime =
+        DateTime(today.year, today.month, today.day, 9, 0, 0);
+    final DateTime endTime = startTime.add(const Duration(hours: 2));
+    meetings.add(Meeting(
+        'Conference', startTime, endTime, const Color(0xFF0F8644), false));
+    return meetings;
   }
 }
-  
+
+class MeetingDataSource extends CalendarDataSource {
+  MeetingDataSource(List<Meeting> source) {
+    appointments = source;
+  }
+
+  @override
+  DateTime getStartTime(int index) {
+    return appointments![index].from;
+  }
+
+  @override
+  DateTime getEndTime(int index) {
+    return appointments![index].to;
+  }
+
+  @override
+  String getSubject(int index) {
+    return appointments![index].eventName;
+  }
+
+  @override
+  Color getColor(int index) {
+    return appointments![index].background;
+  }
+
+  @override
+  bool isAllDay(int index) {
+    return appointments![index].isAllDay;
+  }
+}
+
+class Meeting {
+  Meeting(this.eventName, this.from, this.to, this.background, this.isAllDay);
+
+  String eventName;
+  DateTime from;
+  DateTime to;
+  Color background;
+  bool isAllDay;
+}

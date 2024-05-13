@@ -123,11 +123,18 @@ Future<void> addDailyItemDetails(
   ) async {
     await FirebaseFirestore.instance.collection('Tasks').add({
       "itemName": dailyItem.itemName,
-      "userId": dailyItem.userId,
-      "duration": dailyItem.duration,
       "isEvent":dailyItem.isEvent,
-      "datetime":dailyItem.dateTime
+      "startDateTime":dailyItem.from,
+      "endDateTime":dailyItem.to,
+      "userId":dailyItem.userId,
     });
   }
 
+  Stream<QuerySnapshot> getDailyItemStream(userId) {
+    final dailyItemStream = dailyItems
+        .where('userId', isEqualTo: userId)
+        //.orderBy('startDate', descending: true)
+        .snapshots();
+    return dailyItemStream;
+  }
 }
