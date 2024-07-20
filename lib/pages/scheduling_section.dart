@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, await_only_futures, avoid_function_literals_in_foreach_calls
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,6 +18,7 @@ class SchedulingSection extends StatefulWidget {
 class _SchedulingSectionState extends State<SchedulingSection> {
   final user = FirebaseAuth.instance.currentUser;
   FireStoreService fireStoreService = FireStoreService();
+
   void calendarTapped(CalendarTapDetails calendarTapDetails) {
     if (_controller.view == CalendarView.month &&
         calendarTapDetails.targetElement == CalendarElement.calendarCell) {
@@ -34,32 +35,56 @@ class _SchedulingSectionState extends State<SchedulingSection> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: SfCalendar(
-      view: CalendarView.week,
-      allowedViews: [
-        CalendarView.day,
-        CalendarView.week,
-        CalendarView.month,
-      ],
-      viewHeaderStyle: ViewHeaderStyle(backgroundColor: _viewHeaderColor),
-      backgroundColor: _calendarColor,
-      controller: _controller,
-      initialDisplayDate: DateTime.now(),
-      dataSource: MeetingDataSource(_getDataSource()),
-      onTap: calendarTapped,
-      monthViewSettings: MonthViewSettings(
-          navigationDirection: MonthNavigationDirection.vertical),
-    ));
+        body: FutureBuilder<List<Meeting>>(
+            future: _getDataSource(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+              if (snapshot.hasData) {
+                final meetings = snapshot.data!;
+                return SfCalendar(
+                  view: CalendarView.month,
+                  allowedViews: [
+                    CalendarView.day,
+                    CalendarView.week,
+                    CalendarView.month,
+                  ],
+                  viewHeaderStyle:
+                      ViewHeaderStyle(backgroundColor: _viewHeaderColor),
+                  backgroundColor: _calendarColor,
+                  controller: _controller,
+                  initialDisplayDate: DateTime.now(),
+                  dataSource: MeetingDataSource(meetings),
+                  onTap: calendarTapped,
+                  monthViewSettings: MonthViewSettings(
+                      appointmentDisplayMode:
+                          MonthAppointmentDisplayMode.indicator,
+                      showAgenda: true,
+                      agendaViewHeight: 200,
+                      agendaItemHeight: 50,
+                      navigationDirection: MonthNavigationDirection.horizontal),
+                );
+              }
+              return const Center(child: CircularProgressIndicator());
+            }));
   }
 
-  List<Meeting> _getDataSource() {
+  Future<List<Meeting>> _getDataSource() async {
     final List<Meeting> meetings = <Meeting>[];
-    final DateTime today = DateTime.now();
-    final DateTime startTime =
-        DateTime(today.year, today.month, today.day, 9, 0, 0);
-    final DateTime endTime = startTime.add(const Duration(hours: 2));
-    meetings.add(Meeting(
-        'Conference', startTime, endTime, const Color(0xFF0F8644), false));
+
+    await fireStoreService.getTasksStream(user!.uid).listen((event) {
+      event.docs.forEach((element) {
+        final Map<String, dynamic> data =
+            element.data() as Map<String, dynamic>;
+        final DateTime startTime = data['startDate'].toDate();
+        final DateTime endTime = startTime.add(const Duration(hours: 2));
+
+        meetings.add(Meeting(data["taskName"], startTime, endTime,
+            const Color(0xFF0F8644), false));
+      });
+    });
+    
     return meetings;
   }
 }
@@ -95,9 +120,8 @@ class MeetingDataSource extends CalendarDataSource {
   }
 }
 
-class Meeting {
+class Meeting  {
   Meeting(this.eventName, this.from, this.to, this.background, this.isAllDay);
-
   String eventName;
   DateTime from;
   DateTime to;

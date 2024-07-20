@@ -37,9 +37,8 @@ dependencies:
   firebase_core: ^2.28.0
   cloud_firestore: ^4.16.1
   firebase_auth: ^4.19.0
-  intl: ^0.19.0
-  time_planner: ^0.1.2+1
   syncfusion_flutter_calendar: ^25.2.3
+  provider: 
 
 dev_dependencies:
   flutter_test:

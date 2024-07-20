@@ -6,8 +6,9 @@ import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class MeetingDataSource extends CalendarDataSource {
   MeetingDataSource(List<DailyItem> source){
-    appointments = source;
+    List<DailyItem>appointments = source as List<DailyItem>;
   }
+
 
   @override
   DateTime getStartTime(int index) {
