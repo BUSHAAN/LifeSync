@@ -1,8 +1,14 @@
 import 'dart:ui';
 
 class DailyItem {
-  DailyItem(this.itemName, this.from, this.to, this.background, this.isAllDay,
-      this.isEvent,this.userId);
+  DailyItem(
+      {required this.itemName,
+      required this.from,
+      required this.to,
+      required this.background,
+      required this.isAllDay,
+      required this.isEvent,
+      required this.userId});
 
   String itemName;
   String userId;

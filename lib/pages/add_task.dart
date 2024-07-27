@@ -293,9 +293,11 @@ class _AddTasksPageState extends State<AddTasksPage> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    fireStoreService.addTaskDetails(
+                    setState(() {
+                      fireStoreService.addTaskDetails(
                       newTask,
                     );
+                    });
                     Navigator.pop(context);
                   },
                   child: Text("Add Task"),

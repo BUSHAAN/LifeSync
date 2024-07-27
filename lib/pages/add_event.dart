@@ -323,7 +323,9 @@ class _AddEventPageState extends State<AddEventPage> {
                   ),),
                 ElevatedButton(
                     onPressed: () {
-                      fireStoreService.addEventDetails(newEvent);
+                      setState(() {
+                        fireStoreService.addEventDetails(newEvent);
+                      });
                       Navigator.pop(context);
                     },
                     child: Text('Add Event'))

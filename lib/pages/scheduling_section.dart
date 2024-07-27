@@ -80,7 +80,8 @@ class _SchedulingSectionState extends State<SchedulingSection> {
         final DateTime startTime = data['startDateTime'].toDate();
         final DateTime endTime = startTime.add(Duration(hours: data["duration"]));
         meetings.add(Meeting(data["itemName"], startTime, endTime,
-            const Color(0xFF0F8644), false));
+            data["isEvent"] ? Colors.red : Colors.green,
+            false));
       });
     });
 

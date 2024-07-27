@@ -18,7 +18,6 @@ class _AllTasksPageState extends State<AllTasksPage> {
   final user = FirebaseAuth.instance.currentUser;
   final FireStoreService fireStoreService = FireStoreService();
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,7 +92,8 @@ class _AllTasksPageState extends State<AllTasksPage> {
                                     title: const Text('Are you sure?'),
                                     content: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
                                       children: [
                                         Text(
                                             'Do you want to permanently delete'),
@@ -117,7 +117,9 @@ class _AllTasksPageState extends State<AllTasksPage> {
                                 if (result == null || !result) {
                                   return;
                                 }
-                                await fireStoreService.deleteTask(docId);
+                                setState(() {
+                                  fireStoreService.deleteTask(docId);
+                                });
                               },
                               icon: const Icon(Icons.delete))
                         ],

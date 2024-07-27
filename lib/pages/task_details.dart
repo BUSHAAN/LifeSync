@@ -105,7 +105,6 @@ class _TaskDetailsState extends State<TaskDetails> {
 
   @override
   Widget build(BuildContext context) {
-    // ignore: prefer_const_constructors
     return Scaffold(
       appBar: AppBar(
         title: Text("Task Details"),
@@ -264,11 +263,13 @@ class _TaskDetailsState extends State<TaskDetails> {
             ),
             ElevatedButton(
               onPressed: () async {
-                widget.taskData['deadline'] = _deadline;
-                widget.taskData['startDate'] = _startDate;
-                await fireStoreService.updateTask(
-                    widget.documentId, widget.taskData);
-                Navigator.pop(context);
+                setState(() {
+                  widget.taskData['deadline'] = _deadline;
+                  widget.taskData['startDate'] = _startDate;
+                  fireStoreService.updateTask(
+                      widget.documentId, widget.taskData);
+                  Navigator.pop(context);
+                });
               },
               child: Text("Save Changes"),
             ),

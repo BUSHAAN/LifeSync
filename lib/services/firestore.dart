@@ -10,7 +10,7 @@ class FireStoreService {
       FirebaseFirestore.instance.collection("Tasks");
   final CollectionReference events =
       FirebaseFirestore.instance.collection("Events");
-    final CollectionReference dailyItems =
+  final CollectionReference dailyItems =
       FirebaseFirestore.instance.collection("DailyItems");
 
   Future<void> addTaskDetails(
@@ -73,7 +73,8 @@ class FireStoreService {
   Future<void> addEventDetails(
     Event event,
   ) async {
-    await FirebaseFirestore.instance.collection('Events').add({
+    DocumentReference<Map<String, dynamic>> docref =
+        await FirebaseFirestore.instance.collection('Events').add({
       "userId": event.userId,
       "eventName": event.eventName,
       "startTime": event.startTime,
@@ -81,6 +82,29 @@ class FireStoreService {
       "frequency": event.frequency,
       "selectedWeekdays": event.selectedWeekdays,
       "startDate": event.startDate,
+    });
+    DateTime startDateTime = DateTime(
+        event.startDate!.year,
+        event.startDate!.month,
+        event.startDate!.day,
+        event.startTime!.hour,
+        event.startTime!.minute);
+    DateTime endDateTime = DateTime(
+        event.startDate!.year,
+        event.startDate!.month,
+        event.startDate!.day,
+        event.endTime!.hour,
+        event.endTime!.minute);
+    await FirebaseFirestore.instance.collection('DailyItems').add({
+      "userId": event.userId,
+      "itemName": event.eventName,
+      "isEvent": true,
+      "startDateTime": startDateTime,
+      "endDateTime": endDateTime,
+      "duration": event.endTime == null
+          ? 0
+          : event.endTime!.difference(event.startTime!).inHours,
+      "refId": docref.id,
     });
   }
 
@@ -103,7 +127,7 @@ class FireStoreService {
     }
   }
 
-    Future<void> updateEvent(
+  Future<void> updateEvent(
       String docId, Map<String, dynamic> updatedEvent) async {
     await events.doc(docId).update({
       'userId': updatedEvent['userId'], // Assuming you have a userId field
@@ -113,21 +137,51 @@ class FireStoreService {
       'frequency': updatedEvent['frequency'],
       'selectedWeekdays': updatedEvent['selectedWeekdays'],
     });
+
+    DateTime startDateTime = DateTime(
+        updatedEvent['startDate'].year,
+        updatedEvent['startDate'].month,
+        updatedEvent['startDate'].day,
+        updatedEvent['startTime'].hour,
+        updatedEvent['startTime'].minute);
+    DateTime endDateTime = DateTime(
+        updatedEvent['startDate'].year,
+        updatedEvent['startDate'].month,
+        updatedEvent['startDate'].day,
+        updatedEvent['startTime'].hour,
+        updatedEvent['startTime'].minute);
+    await dailyItems.where('refId', isEqualTo: docId).get().then((value) {
+      for (var element in value.docs) {
+        element.reference.update({
+          "duration": endDateTime.difference(startDateTime).inHours,
+          "endDateTime": endDateTime,
+          "isEvent": true,
+          "itemName": updatedEvent['eventName'],
+          "startDateTime": startDateTime,
+          "userId": updatedEvent['userId'],
+        });
+      }
+    });
   }
 
   Future<void> deleteEvent(String docId) async {
     await events.doc(docId).delete();
+    QuerySnapshot querySnapshot =
+        await dailyItems.where('refId', isEqualTo: docId).get();
+    for (QueryDocumentSnapshot doc in querySnapshot.docs) {
+      await doc.reference.delete();
+    }
   }
 
-Future<void> addDailyItemDetails(
+  Future<void> addDailyItemDetails(
     DailyItem dailyItem,
   ) async {
     await FirebaseFirestore.instance.collection('Tasks').add({
       "itemName": dailyItem.itemName,
-      "isEvent":dailyItem.isEvent,
-      "startDateTime":dailyItem.from,
-      "endDateTime":dailyItem.to,
-      "userId":dailyItem.userId,
+      "isEvent": dailyItem.isEvent,
+      "startDateTime": dailyItem.from,
+      "endDateTime": dailyItem.to,
+      "userId": dailyItem.userId,
     });
   }
 
@@ -137,5 +191,18 @@ Future<void> addDailyItemDetails(
         //.orderBy('startDate', descending: true)
         .snapshots();
     return dailyItemStream;
+  }
+
+  Future<void> updateDailyItem(
+      String docId, Map<String, dynamic> updatedDailyItem) async {
+    await events.doc(docId).update({
+      'duration': updatedDailyItem['duration'],
+      'endDateTime': updatedDailyItem['endDateTime'],
+      'isEvent': updatedDailyItem['isEvent'],
+      'itemName': updatedDailyItem['itemName'],
+      'startDateTime': updatedDailyItem['startDateTime'],
+      'refId': updatedDailyItem['refId'],
+      'userId': updatedDailyItem['userId'],
+    });
   }
 }

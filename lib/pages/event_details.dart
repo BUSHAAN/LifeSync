@@ -22,16 +22,13 @@ class _EventDetailsState extends State<EventDetails> {
   List<dynamic> _selectedWeekdays = [];
   final List<String> _frequencies = ["Daily", "Weekly", "One-Time"];
 
-@override
+  @override
   void initState() {
     _startTime = (widget.eventData['startTime'] as Timestamp).toDate();
     _endTime = (widget.eventData['endTime'] as Timestamp).toDate();
     _startDate = (widget.eventData['startDate'] as Timestamp).toDate();
     super.initState();
   }
-
-
-
 
   Future<void> _selectStartTime(BuildContext context) async {
     final TimeOfDay? pickedTime = await showTimePicker(
@@ -76,7 +73,7 @@ class _EventDetailsState extends State<EventDetails> {
     }
   }
 
-    Future<void> _selectStartDate(BuildContext context) async {
+  Future<void> _selectStartDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: _startDate ?? DateTime.now(),
@@ -89,6 +86,7 @@ class _EventDetailsState extends State<EventDetails> {
       });
     }
   }
+
   @override
   Widget build(BuildContext context) {
     _selectedWeekdays = widget.eventData['selectedWeekdays'];
@@ -171,141 +169,143 @@ class _EventDetailsState extends State<EventDetails> {
                 SizedBox(
                   height: 20,
                 ),
-                  Visibility(
-                    visible: widget.eventData['frequency'] == "Weekly",
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Select weekdays to repeat:",
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        Row(
-                          children: [
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _selectedWeekdays
-                                      .contains(DateTime.monday), // Monday
-                                  onChanged: (newValue) => setState(() {
-                                    if (newValue!) {
-                                      _selectedWeekdays.add(DateTime.monday);
-                                    } else {
-                                      _selectedWeekdays.remove(DateTime.monday);
-                                    }
-                                  }),
-                                ),
-                                Text('Monday'),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _selectedWeekdays
-                                      .contains(DateTime.tuesday), // Monday
-                                  onChanged: (newValue) => setState(() {
-                                    if (newValue!) {
-                                      _selectedWeekdays.add(DateTime.tuesday);
-                                    } else {
-                                      _selectedWeekdays.remove(DateTime.tuesday);
-                                    }
-                                  }),
-                                ),
-                                Text('Tuesday'),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _selectedWeekdays
-                                      .contains(DateTime.wednesday), // Monday
-                                  onChanged: (newValue) => setState(() {
-                                    if (newValue!) {
-                                      _selectedWeekdays.add(DateTime.wednesday);
-                                    } else {
-                                      _selectedWeekdays
-                                          .remove(DateTime.wednesday);
-                                    }
-                                  }),
-                                ),
-                                Text('Wednesday'),
-                              ],
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _selectedWeekdays
-                                      .contains(DateTime.thursday), // Monday
-                                  onChanged: (newValue) => setState(() {
-                                    if (newValue!) {
-                                      _selectedWeekdays.add(DateTime.thursday);
-                                    } else {
-                                      _selectedWeekdays.remove(DateTime.thursday);
-                                    }
-                                  }),
-                                ),
-                                Text('Thursday'),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _selectedWeekdays
-                                      .contains(DateTime.friday), // Monday
-                                  onChanged: (newValue) => setState(() {
-                                    if (newValue!) {
-                                      _selectedWeekdays.add(DateTime.friday);
-                                    } else {
-                                      _selectedWeekdays.remove(DateTime.friday);
-                                    }
-                                  }),
-                                ),
-                                Text('Friday'),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _selectedWeekdays
-                                      .contains(DateTime.saturday), // Monday
-                                  onChanged: (newValue) => setState(() {
-                                    if (newValue!) {
-                                      _selectedWeekdays.add(DateTime.saturday);
-                                    } else {
-                                      _selectedWeekdays.remove(DateTime.saturday);
-                                    }
-                                  }),
-                                ),
-                                Text('Saturday'),
-                              ],
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _selectedWeekdays
-                                  .contains(DateTime.sunday), // Monday
-                              onChanged: (newValue) => setState(() {
-                                if (newValue!) {
-                                  _selectedWeekdays.add(DateTime.sunday);
-                                } else {
-                                  _selectedWeekdays.remove(DateTime.sunday);
-                                }
-                              }),
-                            ),
-                            Text('Sunday'),
-                          ],
-                        ),
-                      ],
-                    ),
+                Visibility(
+                  visible: widget.eventData['frequency'] == "Weekly",
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Select weekdays to repeat:",
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      Row(
+                        children: [
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _selectedWeekdays
+                                    .contains(DateTime.monday), // Monday
+                                onChanged: (newValue) => setState(() {
+                                  if (newValue!) {
+                                    _selectedWeekdays.add(DateTime.monday);
+                                  } else {
+                                    _selectedWeekdays.remove(DateTime.monday);
+                                  }
+                                }),
+                              ),
+                              Text('Monday'),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _selectedWeekdays
+                                    .contains(DateTime.tuesday), // Monday
+                                onChanged: (newValue) => setState(() {
+                                  if (newValue!) {
+                                    _selectedWeekdays.add(DateTime.tuesday);
+                                  } else {
+                                    _selectedWeekdays.remove(DateTime.tuesday);
+                                  }
+                                }),
+                              ),
+                              Text('Tuesday'),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _selectedWeekdays
+                                    .contains(DateTime.wednesday), // Monday
+                                onChanged: (newValue) => setState(() {
+                                  if (newValue!) {
+                                    _selectedWeekdays.add(DateTime.wednesday);
+                                  } else {
+                                    _selectedWeekdays
+                                        .remove(DateTime.wednesday);
+                                  }
+                                }),
+                              ),
+                              Text('Wednesday'),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _selectedWeekdays
+                                    .contains(DateTime.thursday), // Monday
+                                onChanged: (newValue) => setState(() {
+                                  if (newValue!) {
+                                    _selectedWeekdays.add(DateTime.thursday);
+                                  } else {
+                                    _selectedWeekdays.remove(DateTime.thursday);
+                                  }
+                                }),
+                              ),
+                              Text('Thursday'),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _selectedWeekdays
+                                    .contains(DateTime.friday), // Monday
+                                onChanged: (newValue) => setState(() {
+                                  if (newValue!) {
+                                    _selectedWeekdays.add(DateTime.friday);
+                                  } else {
+                                    _selectedWeekdays.remove(DateTime.friday);
+                                  }
+                                }),
+                              ),
+                              Text('Friday'),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _selectedWeekdays
+                                    .contains(DateTime.saturday), // Monday
+                                onChanged: (newValue) => setState(() {
+                                  if (newValue!) {
+                                    _selectedWeekdays.add(DateTime.saturday);
+                                  } else {
+                                    _selectedWeekdays.remove(DateTime.saturday);
+                                  }
+                                }),
+                              ),
+                              Text('Saturday'),
+                            ],
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _selectedWeekdays
+                                .contains(DateTime.sunday), // Monday
+                            onChanged: (newValue) => setState(() {
+                              if (newValue!) {
+                                _selectedWeekdays.add(DateTime.sunday);
+                              } else {
+                                _selectedWeekdays.remove(DateTime.sunday);
+                              }
+                            }),
+                          ),
+                          Text('Sunday'),
+                        ],
+                      ),
+                    ],
                   ),
-                  Visibility(visible: widget.eventData['frequency'] == "One-Time",child: Row(
+                ),
+                Visibility(
+                  visible: widget.eventData['frequency'] == "One-Time",
+                  child: Row(
                     children: [
                       Text(
                         "Select Start Date: ",
@@ -323,13 +323,17 @@ class _EventDetailsState extends State<EventDetails> {
                         ), // Display only time part
                       ),
                     ],
-                  ),),
+                  ),
+                ),
                 ElevatedButton(
                     onPressed: () async {
-                      widget.eventData['startTime'] = _startTime;
-                      widget.eventData['endTime'] = _endTime;
-                      await fireStoreService.updateEvent(widget.documentId,widget.eventData);
-                      Navigator.pop(context);
+                      setState(() {
+                        widget.eventData['startTime'] = _startTime;
+                        widget.eventData['endTime'] = _endTime;
+                        fireStoreService.updateEvent(
+                        widget.documentId, widget.eventData);
+                        Navigator.pop(context);
+                      });
                     },
                     child: Text('Save Changes'))
               ],

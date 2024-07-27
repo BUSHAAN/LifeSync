@@ -109,7 +109,9 @@ class _AllEventsPageState extends State<AllEventsPage> {
                                 if (result == null || !result) {
                                   return;
                                 }
-                                await fireStoreService.deleteEvent(docId);
+                                setState(() {
+                                  fireStoreService.deleteEvent(docId);
+                                });
                               },
                               icon: const Icon(Icons.delete))
                         ],
