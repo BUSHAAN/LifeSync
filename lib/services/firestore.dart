@@ -79,7 +79,8 @@ class FireStoreService {
       "startTime": event.startTime,
       "endTime": event.endTime,
       "frequency": event.frequency,
-      "selectedWeekdays": event.selectedWeekdays
+      "selectedWeekdays": event.selectedWeekdays,
+      "startDate": event.startDate,
     });
   }
 

@@ -5,6 +5,7 @@ class Event {
   List<int>? selectedWeekdays;
   DateTime? startTime;
   DateTime? endTime;
+  DateTime? startDate;
 
   Event(
       {required this.userId,
@@ -12,5 +13,7 @@ class Event {
       this.selectedWeekdays,
       required this.startTime,
       required this.endTime,
-      required this.frequency});
+      required this.frequency,
+      this.startDate
+      });
 }

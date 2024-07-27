@@ -73,18 +73,17 @@ class _SchedulingSectionState extends State<SchedulingSection> {
   Future<List<Meeting>> _getDataSource() async {
     final List<Meeting> meetings = <Meeting>[];
 
-    await fireStoreService.getTasksStream(user!.uid).listen((event) {
+    await fireStoreService.getDailyItemStream(user!.uid).listen((event) {
       event.docs.forEach((element) {
         final Map<String, dynamic> data =
             element.data() as Map<String, dynamic>;
-        final DateTime startTime = data['startDate'].toDate();
-        final DateTime endTime = startTime.add(const Duration(hours: 2));
-
-        meetings.add(Meeting(data["taskName"], startTime, endTime,
+        final DateTime startTime = data['startDateTime'].toDate();
+        final DateTime endTime = startTime.add(Duration(hours: data["duration"]));
+        meetings.add(Meeting(data["itemName"], startTime, endTime,
             const Color(0xFF0F8644), false));
       });
     });
-    
+
     return meetings;
   }
 }
@@ -120,7 +119,7 @@ class MeetingDataSource extends CalendarDataSource {
   }
 }
 
-class Meeting  {
+class Meeting {
   Meeting(this.eventName, this.from, this.to, this.background, this.isAllDay);
   String eventName;
   DateTime from;
