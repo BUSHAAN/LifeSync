@@ -35,14 +35,23 @@ class _SchedulingSectionState extends State<SchedulingSection> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: FutureBuilder<List<Meeting>>(
-            future: _getDataSource(),
+        body: StreamBuilder<QuerySnapshot>(
+            stream: fireStoreService.getDailyItemStream(user!.uid),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
               }
               if (snapshot.hasData) {
-                final meetings = snapshot.data!;
+                final List<Meeting> meetings = [];
+            final documents = snapshot.data!.docs;
+
+                for (var element in documents) {
+              final Map<String, dynamic> data = element.data() as Map<String, dynamic>;
+              final DateTime startTime = data['startDateTime'].toDate();
+              final DateTime endTime = startTime.add(Duration(hours: data["duration"]));
+              meetings.add(Meeting(
+                  data["itemName"], startTime, endTime, data["isEvent"] ? Colors.red : Colors.green, false));
+            }
                 return SfCalendar(
                   view: CalendarView.month,
                   allowedViews: [
