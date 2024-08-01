@@ -1,14 +1,12 @@
-
 import 'dart:ui';
 
-import 'package:flutter_todo_app/model/daily_item.dart';
+import 'package:flutter_todo_app/model/meeting.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class MeetingDataSource extends CalendarDataSource {
-  MeetingDataSource(List<DailyItem> source){
-    List<DailyItem>appointments = source as List<DailyItem>;
+  MeetingDataSource(List<Meeting> source) {
+    List<Meeting>appointments = source as List<Meeting>;
   }
-
 
   @override
   DateTime getStartTime(int index) {
@@ -22,7 +20,7 @@ class MeetingDataSource extends CalendarDataSource {
 
   @override
   String getSubject(int index) {
-    return appointments![index].itemName;
+    return appointments![index].eventName;
   }
 
   @override

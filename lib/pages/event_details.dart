@@ -19,14 +19,17 @@ class _EventDetailsState extends State<EventDetails> {
   DateTime? _startTime;
   DateTime? _endTime;
   DateTime? _startDate;
-  List<dynamic> _selectedWeekdays = [];
+  List<dynamic>? _selectedWeekdays = [];
   final List<String> _frequencies = ["Daily", "Weekly", "One-Time"];
 
   @override
   void initState() {
     _startTime = (widget.eventData['startTime'] as Timestamp).toDate();
     _endTime = (widget.eventData['endTime'] as Timestamp).toDate();
-    _startDate = (widget.eventData['startDate'] as Timestamp).toDate();
+
+    _startDate = DateTime.now();
+    print("This is the print statement:" + _startTime.toString());
+    _selectedWeekdays = widget.eventData['selectedWeekdays'];
     super.initState();
   }
 
@@ -185,12 +188,12 @@ class _EventDetailsState extends State<EventDetails> {
                             children: [
                               Checkbox(
                                 value: _selectedWeekdays
-                                    .contains(DateTime.monday), // Monday
+                                    ?.contains(DateTime.monday), // Monday
                                 onChanged: (newValue) => setState(() {
                                   if (newValue!) {
-                                    _selectedWeekdays.add(DateTime.monday);
+                                    _selectedWeekdays?.add(DateTime.monday);
                                   } else {
-                                    _selectedWeekdays.remove(DateTime.monday);
+                                    _selectedWeekdays?.remove(DateTime.monday);
                                   }
                                 }),
                               ),
@@ -201,12 +204,12 @@ class _EventDetailsState extends State<EventDetails> {
                             children: [
                               Checkbox(
                                 value: _selectedWeekdays
-                                    .contains(DateTime.tuesday), // Monday
+                                    ?.contains(DateTime.tuesday), // Monday
                                 onChanged: (newValue) => setState(() {
                                   if (newValue!) {
-                                    _selectedWeekdays.add(DateTime.tuesday);
+                                    _selectedWeekdays?.add(DateTime.tuesday);
                                   } else {
-                                    _selectedWeekdays.remove(DateTime.tuesday);
+                                    _selectedWeekdays?.remove(DateTime.tuesday);
                                   }
                                 }),
                               ),
@@ -217,13 +220,13 @@ class _EventDetailsState extends State<EventDetails> {
                             children: [
                               Checkbox(
                                 value: _selectedWeekdays
-                                    .contains(DateTime.wednesday), // Monday
+                                    ?.contains(DateTime.wednesday), // Monday
                                 onChanged: (newValue) => setState(() {
                                   if (newValue!) {
-                                    _selectedWeekdays.add(DateTime.wednesday);
+                                    _selectedWeekdays?.add(DateTime.wednesday);
                                   } else {
                                     _selectedWeekdays
-                                        .remove(DateTime.wednesday);
+                                        ?.remove(DateTime.wednesday);
                                   }
                                 }),
                               ),
@@ -238,12 +241,13 @@ class _EventDetailsState extends State<EventDetails> {
                             children: [
                               Checkbox(
                                 value: _selectedWeekdays
-                                    .contains(DateTime.thursday), // Monday
+                                    ?.contains(DateTime.thursday), // Monday
                                 onChanged: (newValue) => setState(() {
                                   if (newValue!) {
-                                    _selectedWeekdays.add(DateTime.thursday);
+                                    _selectedWeekdays?.add(DateTime.thursday);
                                   } else {
-                                    _selectedWeekdays.remove(DateTime.thursday);
+                                    _selectedWeekdays
+                                        ?.remove(DateTime.thursday);
                                   }
                                 }),
                               ),
@@ -254,12 +258,12 @@ class _EventDetailsState extends State<EventDetails> {
                             children: [
                               Checkbox(
                                 value: _selectedWeekdays
-                                    .contains(DateTime.friday), // Monday
+                                    ?.contains(DateTime.friday), // Monday
                                 onChanged: (newValue) => setState(() {
                                   if (newValue!) {
-                                    _selectedWeekdays.add(DateTime.friday);
+                                    _selectedWeekdays?.add(DateTime.friday);
                                   } else {
-                                    _selectedWeekdays.remove(DateTime.friday);
+                                    _selectedWeekdays?.remove(DateTime.friday);
                                   }
                                 }),
                               ),
@@ -270,12 +274,13 @@ class _EventDetailsState extends State<EventDetails> {
                             children: [
                               Checkbox(
                                 value: _selectedWeekdays
-                                    .contains(DateTime.saturday), // Monday
+                                    ?.contains(DateTime.saturday), // Monday
                                 onChanged: (newValue) => setState(() {
                                   if (newValue!) {
-                                    _selectedWeekdays.add(DateTime.saturday);
+                                    _selectedWeekdays?.add(DateTime.saturday);
                                   } else {
-                                    _selectedWeekdays.remove(DateTime.saturday);
+                                    _selectedWeekdays
+                                        ?.remove(DateTime.saturday);
                                   }
                                 }),
                               ),
@@ -288,12 +293,12 @@ class _EventDetailsState extends State<EventDetails> {
                         children: [
                           Checkbox(
                             value: _selectedWeekdays
-                                .contains(DateTime.sunday), // Monday
+                                ?.contains(DateTime.sunday), // Monday
                             onChanged: (newValue) => setState(() {
                               if (newValue!) {
-                                _selectedWeekdays.add(DateTime.sunday);
+                                _selectedWeekdays?.add(DateTime.sunday);
                               } else {
-                                _selectedWeekdays.remove(DateTime.sunday);
+                                _selectedWeekdays?.remove(DateTime.sunday);
                               }
                             }),
                           ),
@@ -330,8 +335,16 @@ class _EventDetailsState extends State<EventDetails> {
                       setState(() {
                         widget.eventData['startTime'] = _startTime;
                         widget.eventData['endTime'] = _endTime;
+                        widget.eventData['startDate'] =
+                            widget.eventData['frequency'] == "One-Time"
+                                ? _startDate
+                                : null;
+                        widget.eventData['selectedWeekdays'] =
+                            widget.eventData['frequency'] == "Weekly"
+                                ? _selectedWeekdays
+                                : null;
                         fireStoreService.updateEvent(
-                        widget.documentId, widget.eventData);
+                            widget.documentId, widget.eventData);
                         Navigator.pop(context);
                       });
                     },

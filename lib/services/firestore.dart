@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print, prefer_interpolation_to_compose_strings
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/model/daily_item.dart';
 import 'package:flutter_todo_app/model/task.dart';
 import 'package:flutter_todo_app/model/event.dart';
@@ -70,10 +71,8 @@ class FireStoreService {
     await tasks.doc(docId).delete();
   }
 
-  Future<void> addEventDetails(
-    Event event,
-  ) async {
-    DocumentReference<Map<String, dynamic>> docref =
+  Future<void> addEventDetails(Event event) async {
+    DocumentReference<Map<String, dynamic>> docRef =
         await FirebaseFirestore.instance.collection('Events').add({
       "userId": event.userId,
       "eventName": event.eventName,
@@ -83,29 +82,92 @@ class FireStoreService {
       "selectedWeekdays": event.selectedWeekdays,
       "startDate": event.startDate,
     });
-    DateTime startDateTime = DateTime(
-        event.startDate!.year,
-        event.startDate!.month,
-        event.startDate!.day,
-        event.startTime!.hour,
-        event.startTime!.minute);
-    DateTime endDateTime = DateTime(
-        event.startDate!.year,
-        event.startDate!.month,
-        event.startDate!.day,
-        event.endTime!.hour,
-        event.endTime!.minute);
-    await FirebaseFirestore.instance.collection('DailyItems').add({
-      "userId": event.userId,
-      "itemName": event.eventName,
-      "isEvent": true,
-      "startDateTime": startDateTime,
-      "endDateTime": endDateTime,
-      "duration": event.endTime == null
-          ? 0
-          : event.endTime!.difference(event.startTime!).inHours,
-      "refId": docref.id,
-    });
+    List<DateTime> calculateNextOccurrences(
+        List<int> selectedWeekdays, DateTime startTime, DateTime now) {
+      List<DateTime> occurrences = [];
+      for (int weekday in selectedWeekdays) {
+        // Calculate the difference between the desired weekday and today
+        int daysToAdd = weekday - now.weekday;
+        if (daysToAdd < 0) {
+          daysToAdd +=
+              7; // Handle cases where the desired day is in the past week
+        }
+        // Calculate the next occurrence of the weekday
+        DateTime occurrence = now.add(Duration(days: daysToAdd));
+        // Check if the event start time has already passed today
+        if (weekday == now.weekday && now.hour >= startTime.hour) {
+          // If the event time has passed, move to the next occurrence
+          occurrence = occurrence.add(const Duration(days: 7));
+        }
+        occurrences.add(occurrence);
+      }
+      return occurrences;
+    }
+    if (event.frequency == "One-Time") {
+      DateTime startDateTime = DateTime(
+          event.startDate!.year,
+          event.startDate!.month,
+          event.startDate!.day,
+          event.startTime!.hour,
+          event.startTime!.minute);
+      DateTime endDateTime = DateTime(
+          event.startDate!.year,
+          event.startDate!.month,
+          event.startDate!.day,
+          event.endTime!.hour,
+          event.endTime!.minute);
+      await FirebaseFirestore.instance.collection('DailyItems').add({
+        "userId": event.userId,
+        "itemName": event.eventName,
+        "isEvent": true,
+        "startDateTime": startDateTime,
+        "endDateTime": endDateTime,
+        "duration": event.endTime == null
+            ? 0
+            : event.endTime!.difference(event.startTime!).inHours,
+        "refId": docRef.id,
+      });
+    } else if (event.frequency == "Weekly") {
+      List<DateTime> nextOccurrences = calculateNextOccurrences(
+          event.selectedWeekdays!, event.startTime!, DateTime.now());
+      for (DateTime occurrence in nextOccurrences) {
+        DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
+            occurrence.day, event.startTime!.hour, event.startTime!.minute);
+        DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
+            occurrence.day, event.endTime!.hour, event.endTime!.minute);
+        await FirebaseFirestore.instance.collection('DailyItems').add({
+          "userId": event.userId,
+          "itemName": event.eventName,
+          "isEvent": true,
+          "startDateTime": startDateTime,
+          "endDateTime": endDateTime,
+          "duration": event.endTime == null
+              ? 0
+              : event.endTime!.difference(event.startTime!).inHours,
+          "refId": docRef.id,
+        });
+      }
+    }else if (event.frequency == "Daily"){
+      List<DateTime> nextOccurrences = calculateNextOccurrences(
+          [1,2,3,4,5,6,7], event.startTime!, DateTime.now());
+      for (DateTime occurrence in nextOccurrences) {
+        DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
+            occurrence.day, event.startTime!.hour, event.startTime!.minute);
+        DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
+            occurrence.day, event.endTime!.hour, event.endTime!.minute);
+        await FirebaseFirestore.instance.collection('DailyItems').add({
+          "userId": event.userId,
+          "itemName": event.eventName,
+          "isEvent": true,
+          "startDateTime": startDateTime,
+          "endDateTime": endDateTime,
+          "duration": event.endTime == null
+              ? 0
+              : event.endTime!.difference(event.startTime!).inHours,
+          "refId": docRef.id,
+        });
+      }
+    }
   }
 
   Stream<QuerySnapshot> getEventStream(userId) {

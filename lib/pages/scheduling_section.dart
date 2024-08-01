@@ -73,6 +73,9 @@ class _SchedulingSectionState extends State<SchedulingSection> {
                       agendaViewHeight: 200,
                       agendaItemHeight: 50,
                       navigationDirection: MonthNavigationDirection.horizontal),
+                      showTodayButton: true,
+                      minDate: DateTime.now(),
+                      firstDayOfWeek:1,
                 );
               }
               return const Center(child: CircularProgressIndicator());
