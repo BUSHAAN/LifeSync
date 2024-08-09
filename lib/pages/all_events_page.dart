@@ -86,7 +86,10 @@ class _AllEventsPageState extends State<AllEventsPage> {
                                               .toList()
                                           : null,
                                   startDate:
-                                      (data['startDate'] as Timestamp).toDate(),
+                                      data['frequency'] == "One-Time"
+                                          ? (data['startDate'] as Timestamp)
+                                              .toDate()
+                                          : null,
                                 );
                                 Navigator.push(
                                   context,
