@@ -71,7 +71,100 @@ class FireStoreService {
     await tasks.doc(docId).delete();
   }
 
-  Future<void> addEventDetails(Event event) async {
+  Future<void> addEventDetails(Event event, BuildContext context) async {
+    // Prepare the list of occurrences
+    Future<QueryDocumentSnapshot?> findBlockingEvent(
+        DateTime startDateTime, DateTime endDateTime) async {
+      var overlappingDailyItems = await FirebaseFirestore.instance
+          .collection('DailyItems')
+          .where('userId', isEqualTo: event.userId)
+          .where('isEvent', isEqualTo: true)
+          .where('startDateTime', isGreaterThanOrEqualTo: DateTime.now())
+          .where('startDateTime', isLessThan: endDateTime)
+          .where('endDateTime', isGreaterThan: startDateTime)
+          .limit(1)
+          .get();
+
+      return overlappingDailyItems.docs.isNotEmpty ? overlappingDailyItems.docs.first
+        : null;
+    }
+
+    List<DateTime> calculateNextOccurrences(
+        List<int> selectedWeekdays, DateTime startTime) {
+      List<DateTime> occurrences = [];
+      for (int weekday in selectedWeekdays) {
+        // Calculate the difference between the desired weekday and today
+        int daysToAdd = weekday - DateTime.now().weekday;
+        if (daysToAdd < 0) {
+          daysToAdd +=
+              7; // Handle cases where the desired day is in the past week
+        }
+        // Calculate the next occurrence of the weekday
+        DateTime occurrence = DateTime.now().add(Duration(days: daysToAdd));
+        // Check if the event start time has already passed today
+        if (weekday == DateTime.now().weekday && DateTime.now().hour >= startTime.hour) {
+          // If the event time has passed, move to the next occurrence
+          occurrence = occurrence.add(const Duration(days: 7));
+        }
+        occurrences.add(occurrence);
+      }
+      return occurrences;
+    }
+
+    List<DateTime> occurrences;
+    if (event.frequency == "One-Time") {
+      occurrences = [
+        DateTime(
+            event.startDate!.year,
+            event.startDate!.month,
+            event.startDate!.day,
+            event.startTime!.hour,
+            event.startTime!.minute)
+      ];
+    } else if (event.frequency == "Weekly") {
+      occurrences = calculateNextOccurrences(
+          event.selectedWeekdays!, event.startTime!);
+    } else if (event.frequency == "Daily") {
+      occurrences = calculateNextOccurrences(
+          [1, 2, 3, 4, 5, 6, 7], event.startTime!);
+    } else {
+      throw Exception("Invalid event frequency");
+    }
+
+    // Check for overlaps for all occurrences
+    for (DateTime occurrence in occurrences) {
+      DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
+          occurrence.day, event.startTime!.hour, event.startTime!.minute);
+      DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
+          occurrence.day, event.endTime!.hour, event.endTime!.minute);
+
+      QueryDocumentSnapshot? blockingEvent =
+        await findBlockingEvent(startDateTime, endDateTime);
+            if (blockingEvent != null) {
+      // Show a dialog box with blocking event details
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Event Conflict"),
+            content: Text(
+                "The event '${blockingEvent['itemName']}' scheduled on ${blockingEvent['startDateTime'].toDate()} conflicts with your new event."),
+            actions: [
+              TextButton(
+                child: const Text("OK"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+      return; // Stop the function if there is a conflict
+    }
+    }
+
+    // If no overlaps are found, add the event and daily items
     DocumentReference<Map<String, dynamic>> docRef =
         await FirebaseFirestore.instance.collection('Events').add({
       "userId": event.userId,
@@ -82,40 +175,12 @@ class FireStoreService {
       "selectedWeekdays": event.selectedWeekdays,
       "startDate": event.startDate,
     });
-    List<DateTime> calculateNextOccurrences(
-        List<int> selectedWeekdays, DateTime startTime, DateTime now) {
-      List<DateTime> occurrences = [];
-      for (int weekday in selectedWeekdays) {
-        // Calculate the difference between the desired weekday and today
-        int daysToAdd = weekday - now.weekday;
-        if (daysToAdd < 0) {
-          daysToAdd +=
-              7; // Handle cases where the desired day is in the past week
-        }
-        // Calculate the next occurrence of the weekday
-        DateTime occurrence = now.add(Duration(days: daysToAdd));
-        // Check if the event start time has already passed today
-        if (weekday == now.weekday && now.hour >= startTime.hour) {
-          // If the event time has passed, move to the next occurrence
-          occurrence = occurrence.add(const Duration(days: 7));
-        }
-        occurrences.add(occurrence);
-      }
-      return occurrences;
-    }
-    if (event.frequency == "One-Time") {
-      DateTime startDateTime = DateTime(
-          event.startDate!.year,
-          event.startDate!.month,
-          event.startDate!.day,
-          event.startTime!.hour,
-          event.startTime!.minute);
-      DateTime endDateTime = DateTime(
-          event.startDate!.year,
-          event.startDate!.month,
-          event.startDate!.day,
-          event.endTime!.hour,
-          event.endTime!.minute);
+
+    for (DateTime occurrence in occurrences) {
+      DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
+          occurrence.day, event.startTime!.hour, event.startTime!.minute);
+      DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
+          occurrence.day, event.endTime!.hour, event.endTime!.minute);
       await FirebaseFirestore.instance.collection('DailyItems').add({
         "userId": event.userId,
         "itemName": event.eventName,
@@ -127,46 +192,6 @@ class FireStoreService {
             : event.endTime!.difference(event.startTime!).inHours,
         "refId": docRef.id,
       });
-    } else if (event.frequency == "Weekly") {
-      List<DateTime> nextOccurrences = calculateNextOccurrences(
-          event.selectedWeekdays!, event.startTime!, DateTime.now());
-      for (DateTime occurrence in nextOccurrences) {
-        DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
-            occurrence.day, event.startTime!.hour, event.startTime!.minute);
-        DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
-            occurrence.day, event.endTime!.hour, event.endTime!.minute);
-        await FirebaseFirestore.instance.collection('DailyItems').add({
-          "userId": event.userId,
-          "itemName": event.eventName,
-          "isEvent": true,
-          "startDateTime": startDateTime,
-          "endDateTime": endDateTime,
-          "duration": event.endTime == null
-              ? 0
-              : event.endTime!.difference(event.startTime!).inHours,
-          "refId": docRef.id,
-        });
-      }
-    }else if (event.frequency == "Daily"){
-      List<DateTime> nextOccurrences = calculateNextOccurrences(
-          [1,2,3,4,5,6,7], event.startTime!, DateTime.now());
-      for (DateTime occurrence in nextOccurrences) {
-        DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
-            occurrence.day, event.startTime!.hour, event.startTime!.minute);
-        DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
-            occurrence.day, event.endTime!.hour, event.endTime!.minute);
-        await FirebaseFirestore.instance.collection('DailyItems').add({
-          "userId": event.userId,
-          "itemName": event.eventName,
-          "isEvent": true,
-          "startDateTime": startDateTime,
-          "endDateTime": endDateTime,
-          "duration": event.endTime == null
-              ? 0
-              : event.endTime!.difference(event.startTime!).inHours,
-          "refId": docRef.id,
-        });
-      }
     }
   }
 
