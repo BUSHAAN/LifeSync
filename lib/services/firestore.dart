@@ -215,37 +215,37 @@ class FireStoreService {
   }
 
   Future<void> updateEvent(
-      String docId, Map<String, dynamic> updatedEvent) async {
+      String docId, Event updatedEvent) async {
     await events.doc(docId).update({
-      'userId': updatedEvent['userId'], // Assuming you have a userId field
-      'eventName': updatedEvent['eventName'],
-      'startTime': updatedEvent['startTime'],
-      'endTime': updatedEvent['endTime'],
-      'frequency': updatedEvent['frequency'],
-      'selectedWeekdays': updatedEvent['selectedWeekdays'],
+      'userId': updatedEvent.userId, // Assuming you have a userId field
+      'eventName': updatedEvent.eventName,
+      'startTime': updatedEvent.startTime,
+      'endTime': updatedEvent.endTime,
+      'frequency': updatedEvent.frequency,
+      'selectedWeekdays': updatedEvent.selectedWeekdays,
     });
 
     DateTime startDateTime = DateTime(
-        updatedEvent['startDate'].year,
-        updatedEvent['startDate'].month,
-        updatedEvent['startDate'].day,
-        updatedEvent['startTime'].hour,
-        updatedEvent['startTime'].minute);
+        updatedEvent.startDate!.year,
+        updatedEvent.startDate!.month,
+        updatedEvent.startDate!.day,
+        updatedEvent.startDate!.hour,
+        updatedEvent.startDate!.minute);
     DateTime endDateTime = DateTime(
-        updatedEvent['startDate'].year,
-        updatedEvent['startDate'].month,
-        updatedEvent['startDate'].day,
-        updatedEvent['startTime'].hour,
-        updatedEvent['startTime'].minute);
+        updatedEvent.startDate!.year,
+        updatedEvent.startDate!.month,
+        updatedEvent.startDate!.day,
+        updatedEvent.startDate!.hour,
+        updatedEvent.startDate!.minute);
     await dailyItems.where('refId', isEqualTo: docId).get().then((value) {
       for (var element in value.docs) {
         element.reference.update({
           "duration": endDateTime.difference(startDateTime).inHours,
           "endDateTime": endDateTime,
           "isEvent": true,
-          "itemName": updatedEvent['eventName'],
+          "itemName": updatedEvent.eventName,
           "startDateTime": startDateTime,
-          "userId": updatedEvent['userId'],
+          "userId": updatedEvent.userId,
         });
       }
     });

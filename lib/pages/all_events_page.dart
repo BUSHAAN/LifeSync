@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_todo_app/model/event.dart';
 import 'package:flutter_todo_app/pages/add_event.dart';
 import 'package:flutter_todo_app/pages/event_details.dart';
 import 'package:flutter_todo_app/services/firestore.dart';
@@ -61,18 +62,37 @@ class _AllEventsPageState extends State<AllEventsPage> {
 
                   String eventTitle = data['eventName'];
                   return Card(
-                    child: ListTile(title: Text(eventTitle),trailing: Wrap(
-                      spacing: 1,
+                    child: ListTile(
+                      title: Text(eventTitle),
+                      trailing: Wrap(
+                        spacing: 1,
                         children: [
                           IconButton(
                               onPressed: () async {
-                                final eventData =
-                                    await fireStoreService.getEventData(docId);
+                                await fireStoreService.getEventData(docId);
+                                Event event = Event(
+                                  userId: data['userId'],
+                                  eventName: data['eventName'],
+                                  startTime:
+                                      (data['startTime'] as Timestamp).toDate(),
+                                  endTime:
+                                      (data['endTime'] as Timestamp).toDate(),
+                                  frequency: data['frequency'],
+                                  selectedWeekdays:
+                                      data['selectedWeekdays'] != null
+                                          ? (data['selectedWeekdays']
+                                                  as List<dynamic>)
+                                              .map((e) => e as int)
+                                              .toList()
+                                          : null,
+                                  startDate:
+                                      (data['startDate'] as Timestamp).toDate(),
+                                );
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => EventDetails(
-                                        eventData: eventData, documentId: docId),
+                                        event: event, documentId: docId),
                                   ),
                                 );
                               },
@@ -85,7 +105,8 @@ class _AllEventsPageState extends State<AllEventsPage> {
                                     title: const Text('Are you sure?'),
                                     content: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
                                       children: [
                                         Text(
                                             'Do you want to permanently delete'),
@@ -115,7 +136,8 @@ class _AllEventsPageState extends State<AllEventsPage> {
                               },
                               icon: const Icon(Icons.delete))
                         ],
-                      ),),
+                      ),
+                    ),
                   );
                 });
           } else {

@@ -2,13 +2,14 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_todo_app/model/event.dart';
 import 'package:flutter_todo_app/services/firestore.dart';
 
 class EventDetails extends StatefulWidget {
-  final Map<String, dynamic> eventData;
+  final Event event;
   final String documentId;
   const EventDetails(
-      {super.key, required this.eventData, required this.documentId});
+      {super.key, required this.event, required this.documentId});
 
   @override
   State<EventDetails> createState() => _EventDetailsState();
@@ -23,10 +24,10 @@ class _EventDetailsState extends State<EventDetails> {
 
   @override
   void initState() {
-    _startTime = (widget.eventData['startTime'] as Timestamp).toDate();
-    _endTime = (widget.eventData['endTime'] as Timestamp).toDate();
-    _startDate = widget.eventData['frequency'] == 'One-Time' ? (widget.eventData['startDate'] as Timestamp).toDate() : DateTime.now();
-    _selectedWeekdays = widget.eventData['selectedWeekdays'];
+    _startTime = widget.event.startTime;
+    _endTime = widget.event.endTime;
+    _startDate = widget.event.frequency == 'One-Time' ? widget.event.startDate : DateTime.now();
+    _selectedWeekdays = widget.event.selectedWeekdays;
     super.initState();
   }
 
@@ -87,7 +88,7 @@ class _EventDetailsState extends State<EventDetails> {
 
   @override
   Widget build(BuildContext context) {
-    _selectedWeekdays = widget.eventData['selectedWeekdays'];
+    _selectedWeekdays = widget.event.selectedWeekdays;
 
     return Scaffold(
       appBar: AppBar(
@@ -100,14 +101,14 @@ class _EventDetailsState extends State<EventDetails> {
             child: Column(
               children: [
                 TextFormField(
-                  initialValue: widget.eventData['eventName'],
+                  initialValue: widget.event.eventName,
                   decoration: InputDecoration(
                     labelText: "Event Name",
                   ),
                   validator: (value) =>
                       value!.isEmpty ? "Please enter an event name" : null,
                   onChanged: (newValue) =>
-                      setState(() => widget.eventData["eventName"] = newValue),
+                      setState(() => widget.event.eventName = newValue),
                 ),
                 SizedBox(height: 10),
                 Row(
@@ -160,19 +161,17 @@ class _EventDetailsState extends State<EventDetails> {
                   },
                   child: AbsorbPointer(
                     child: TextFormField(
-                      initialValue: widget.eventData['frequency'],
+                      initialValue: widget.event.frequency,
                       decoration: InputDecoration(
                         labelText: "Frequency",
                       ),
-                      onChanged: (value) {
-                        // No changes should be allowed, so we don't need to handle this
-                      },
+                      
                     ),
                   ),
                 ),
                 SizedBox(height: 20),
                 Visibility(
-                  visible: widget.eventData['frequency'] == "Weekly",
+                  visible: widget.event.frequency == "Weekly",
                   child: GestureDetector(
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -221,7 +220,7 @@ class _EventDetailsState extends State<EventDetails> {
                   ),
                 ),
                 Visibility(
-                  visible: widget.eventData['frequency'] == "One-Time",
+                  visible: widget.event.frequency == "One-Time",
                   child: Row(
                     children: [
                       Text(
@@ -246,14 +245,14 @@ class _EventDetailsState extends State<EventDetails> {
                 ElevatedButton(
                   onPressed: () async {
                     setState(() {
-                      widget.eventData['startTime'] = _startTime;
-                      widget.eventData['endTime'] = _endTime;
-                      widget.eventData['startDate'] =
-                          widget.eventData['frequency'] == "One-Time"
+                      widget.event.startTime = _startTime;
+                      widget.event.endTime = _endTime;
+                      widget.event.startDate =
+                          widget.event.frequency == "One-Time"
                               ? _startDate
                               : null;
                       fireStoreService.updateEvent(
-                          widget.documentId, widget.eventData);
+                          widget.documentId, widget.event);
                       Navigator.pop(context);
                     });
                   },
