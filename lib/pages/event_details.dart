@@ -242,21 +242,25 @@ class _EventDetailsState extends State<EventDetails> {
                   ),
                 ),
                 SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () async {
-                    setState(() {
-                      widget.event.startTime = _startTime;
-                      widget.event.endTime = _endTime;
-                      widget.event.startDate =
-                          widget.event.frequency == "One-Time"
-                              ? _startDate
-                              : null;
-                      fireStoreService.updateEvent(
-                          widget.documentId, widget.event);
-                      Navigator.pop(context);
-                    });
-                  },
-                  child: Text('Save Changes'),
+                Builder(
+                  builder: (BuildContext context) {
+                    return ElevatedButton(
+                      onPressed: () async {
+                        setState(() {
+                          widget.event.startTime = _startTime;
+                          widget.event.endTime = _endTime;
+                          widget.event.startDate =
+                              widget.event.frequency == "One-Time"
+                                  ? _startDate
+                                  : null;
+                          fireStoreService.updateEvent(
+                              widget.documentId, widget.event, context);
+                          Navigator.pop(context);
+                        });
+                      },
+                      child: Text('Save Changes'),
+                    );
+                  }
                 ),
               ],
             ),

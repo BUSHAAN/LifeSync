@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, prefer_final_fields, prefer_if_null_operators
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/model/event.dart';
@@ -322,18 +323,38 @@ class _AddEventPageState extends State<AddEventPage> {
                     ],
                   ),
                 ),
-                Builder(
-                  builder: (BuildContext context) {
-                    return ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            fireStoreService.addEventDetails(newEvent, context);
-                          });
-                          Navigator.pop(context);
-                        },
-                        child: Text('Add Event'));
-                  },
-                )
+                ElevatedButton(
+  onPressed: () async {
+    Map<String, dynamic>? result = await fireStoreService.addEventDetails(newEvent);
+    
+    if (result != null && result['hasConflict']) {
+      QueryDocumentSnapshot blockingEvent = result['blockingEvent'];
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Event Conflict"),
+            content: Text(
+                "The event '${blockingEvent['itemName']}' scheduled on ${blockingEvent['startDateTime'].toDate()} conflicts with your new event."),
+            actions: [
+              TextButton(
+                child: const Text("OK"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      Navigator.pop(context); // Close the dialog if the event is added successfully
+    }
+  },
+  child: Text('Save Changes'),
+),
+
               ],
             ),
           ),

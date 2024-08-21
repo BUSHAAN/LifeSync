@@ -71,24 +71,6 @@ class FireStoreService {
     await tasks.doc(docId).delete();
   }
 
-  Future<void> addEventDetails(Event event, BuildContext context) async {
-    // Prepare the list of occurrences
-    Future<QueryDocumentSnapshot?> findBlockingEvent(
-        DateTime startDateTime, DateTime endDateTime) async {
-      var overlappingDailyItems = await FirebaseFirestore.instance
-          .collection('DailyItems')
-          .where('userId', isEqualTo: event.userId)
-          .where('isEvent', isEqualTo: true)
-          .where('startDateTime', isGreaterThanOrEqualTo: DateTime.now())
-          .where('startDateTime', isLessThan: endDateTime)
-          .where('endDateTime', isGreaterThan: startDateTime)
-          .limit(1)
-          .get();
-
-      return overlappingDailyItems.docs.isNotEmpty ? overlappingDailyItems.docs.first
-        : null;
-    }
-
     List<DateTime> calculateNextOccurrences(
         List<int> selectedWeekdays, DateTime startTime) {
       List<DateTime> occurrences = [];
@@ -102,7 +84,8 @@ class FireStoreService {
         // Calculate the next occurrence of the weekday
         DateTime occurrence = DateTime.now().add(Duration(days: daysToAdd));
         // Check if the event start time has already passed today
-        if (weekday == DateTime.now().weekday && DateTime.now().hour >= startTime.hour) {
+        if (weekday == DateTime.now().weekday &&
+            DateTime.now().hour >= startTime.hour) {
           // If the event time has passed, move to the next occurrence
           occurrence = occurrence.add(const Duration(days: 7));
         }
@@ -111,89 +94,98 @@ class FireStoreService {
       return occurrences;
     }
 
-    List<DateTime> occurrences;
-    if (event.frequency == "One-Time") {
-      occurrences = [
-        DateTime(
-            event.startDate!.year,
-            event.startDate!.month,
-            event.startDate!.day,
-            event.startTime!.hour,
-            event.startTime!.minute)
-      ];
-    } else if (event.frequency == "Weekly") {
-      occurrences = calculateNextOccurrences(
-          event.selectedWeekdays!, event.startTime!);
-    } else if (event.frequency == "Daily") {
-      occurrences = calculateNextOccurrences(
-          [1, 2, 3, 4, 5, 6, 7], event.startTime!);
-    } else {
-      throw Exception("Invalid event frequency");
-    }
+Future<Map<String, dynamic>?> addEventDetails(Event event) async {
+  // Prepare the list of occurrences
+  Future<QueryDocumentSnapshot?> findBlockingEvent(
+      DateTime startDateTime, DateTime endDateTime) async {
+    var overlappingDailyItems = await FirebaseFirestore.instance
+        .collection('DailyItems')
+        .where('userId', isEqualTo: event.userId)
+        .where('isEvent', isEqualTo: true)
+        .where('startDateTime', isGreaterThanOrEqualTo: DateTime.now())
+        .where('startDateTime', isLessThan: endDateTime)
+        .where('endDateTime', isGreaterThan: startDateTime)
+        .limit(1)
+        .get();
 
-    // Check for overlaps for all occurrences
-    for (DateTime occurrence in occurrences) {
-      DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
-          occurrence.day, event.startTime!.hour, event.startTime!.minute);
-      DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
-          occurrence.day, event.endTime!.hour, event.endTime!.minute);
+    return overlappingDailyItems.docs.isNotEmpty
+        ? overlappingDailyItems.docs.first
+        : null;
+  }
 
-      QueryDocumentSnapshot? blockingEvent =
+  List<DateTime> occurrences;
+  if (event.frequency == "One-Time") {
+    occurrences = [
+      DateTime(
+          event.startDate!.year,
+          event.startDate!.month,
+          event.startDate!.day,
+          event.startTime!.hour,
+          event.startTime!.minute)
+    ];
+  } else if (event.frequency == "Weekly") {
+    occurrences =
+        calculateNextOccurrences(event.selectedWeekdays!, event.startTime!);
+  } else if (event.frequency == "Daily") {
+    occurrences =
+        calculateNextOccurrences([1, 2, 3, 4, 5, 6, 7], event.startTime!);
+  } else {
+    throw Exception("Invalid event frequency");
+  }
+
+  // First, check for overlaps for all occurrences
+  for (DateTime occurrence in occurrences) {
+    DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
+        occurrence.day, event.startTime!.hour, event.startTime!.minute);
+    DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
+        occurrence.day, event.endTime!.hour, event.endTime!.minute);
+
+    QueryDocumentSnapshot? blockingEvent =
         await findBlockingEvent(startDateTime, endDateTime);
-            if (blockingEvent != null) {
-      // Show a dialog box with blocking event details
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("Event Conflict"),
-            content: Text(
-                "The event '${blockingEvent['itemName']}' scheduled on ${blockingEvent['startDateTime'].toDate()} conflicts with your new event."),
-            actions: [
-              TextButton(
-                child: const Text("OK"),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
-      return; // Stop the function if there is a conflict
-    }
-    }
-
-    // If no overlaps are found, add the event and daily items
-    DocumentReference<Map<String, dynamic>> docRef =
-        await FirebaseFirestore.instance.collection('Events').add({
-      "userId": event.userId,
-      "eventName": event.eventName,
-      "startTime": event.startTime,
-      "endTime": event.endTime,
-      "frequency": event.frequency,
-      "selectedWeekdays": event.selectedWeekdays,
-      "startDate": event.startDate,
-    });
-
-    for (DateTime occurrence in occurrences) {
-      DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
-          occurrence.day, event.startTime!.hour, event.startTime!.minute);
-      DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
-          occurrence.day, event.endTime!.hour, event.endTime!.minute);
-      await FirebaseFirestore.instance.collection('DailyItems').add({
-        "userId": event.userId,
-        "itemName": event.eventName,
-        "isEvent": true,
-        "startDateTime": startDateTime,
-        "endDateTime": endDateTime,
-        "duration": event.endTime == null
-            ? 0
-            : event.endTime!.difference(event.startTime!).inHours,
-        "refId": docRef.id,
-      });
+    if (blockingEvent != null) {
+      // Return the blocking event details as a map
+      return {
+        'hasConflict': true,
+        'blockingEvent': blockingEvent,
+      };
     }
   }
+
+  // If no overlaps are found, add the event and daily items
+  DocumentReference<Map<String, dynamic>> docRef =
+      await FirebaseFirestore.instance.collection('Events').add({
+    "userId": event.userId,
+    "eventName": event.eventName,
+    "startTime": event.startTime,
+    "endTime": event.endTime,
+    "frequency": event.frequency,
+    "selectedWeekdays": event.selectedWeekdays,
+    "startDate": event.startDate,
+  });
+
+  for (DateTime occurrence in occurrences) {
+    DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
+        occurrence.day, event.startTime!.hour, event.startTime!.minute);
+    DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
+        occurrence.day, event.endTime!.hour, event.endTime!.minute);
+    await FirebaseFirestore.instance.collection('DailyItems').add({
+      "userId": event.userId,
+      "itemName": event.eventName,
+      "isEvent": true,
+      "startDateTime": startDateTime,
+      "endDateTime": endDateTime,
+      "duration": event.endTime == null
+          ? 0
+          : event.endTime!.difference(event.startTime!).inHours,
+      "refId": docRef.id,
+    });
+  }
+
+  // Return null if no conflicts are found
+  return null;
+}
+
+
 
   Stream<QuerySnapshot> getEventStream(userId) {
     final eventStream = events
@@ -214,42 +206,140 @@ class FireStoreService {
     }
   }
 
-  Future<void> updateEvent(
-      String docId, Event updatedEvent) async {
-    await events.doc(docId).update({
-      'userId': updatedEvent.userId, // Assuming you have a userId field
-      'eventName': updatedEvent.eventName,
-      'startTime': updatedEvent.startTime,
-      'endTime': updatedEvent.endTime,
-      'frequency': updatedEvent.frequency,
-      'selectedWeekdays': updatedEvent.selectedWeekdays,
-    });
 
-    DateTime startDateTime = DateTime(
-        updatedEvent.startDate!.year,
-        updatedEvent.startDate!.month,
-        updatedEvent.startDate!.day,
-        updatedEvent.startDate!.hour,
-        updatedEvent.startDate!.minute);
-    DateTime endDateTime = DateTime(
-        updatedEvent.startDate!.year,
-        updatedEvent.startDate!.month,
-        updatedEvent.startDate!.day,
-        updatedEvent.startDate!.hour,
-        updatedEvent.startDate!.minute);
-    await dailyItems.where('refId', isEqualTo: docId).get().then((value) {
-      for (var element in value.docs) {
-        element.reference.update({
-          "duration": endDateTime.difference(startDateTime).inHours,
-          "endDateTime": endDateTime,
-          "isEvent": true,
-          "itemName": updatedEvent.eventName,
-          "startDateTime": startDateTime,
-          "userId": updatedEvent.userId,
-        });
-      }
-    });
+Future<void> updateEvent(String docId, Event updatedEvent, BuildContext context) async {
+  Future<QueryDocumentSnapshot?> findBlockingEvent(
+    DateTime startDateTime, DateTime endDateTime, String docId) async {
+  var overlappingDailyItems = await FirebaseFirestore.instance
+      .collection('DailyItems')
+      .where('userId', isEqualTo: updatedEvent.userId)
+      .where('isEvent', isEqualTo: true)
+      .where('startDateTime', isGreaterThanOrEqualTo: DateTime.now())
+      .where('startDateTime', isLessThan: endDateTime)
+      .where('endDateTime', isGreaterThan: startDateTime)
+      .where('refId', isNotEqualTo: docId) // Ensure the current event is excluded
+      .limit(1)
+      .get();
+
+  return overlappingDailyItems.docs.isNotEmpty
+      ? overlappingDailyItems.docs.first
+      : null;
+}
+
+  // Prepare the list of occurrences based on the event frequency
+  List<DateTime> occurrences;
+  if (updatedEvent.frequency == "One-Time") {
+    occurrences = [
+      DateTime(
+          updatedEvent.startDate!.year,
+          updatedEvent.startDate!.month,
+          updatedEvent.startDate!.day,
+          updatedEvent.startTime!.hour,
+          updatedEvent.startTime!.minute)
+    ];
+  } else if (updatedEvent.frequency == "Weekly") {
+    occurrences = calculateNextOccurrences(updatedEvent.selectedWeekdays!, updatedEvent.startTime!);
+  } else if (updatedEvent.frequency == "Daily") {
+    occurrences = calculateNextOccurrences([1, 2, 3, 4, 5, 6, 7], updatedEvent.startTime!);
+  } else {
+    throw Exception("Invalid event frequency");
   }
+
+  // Check for overlaps for all occurrences
+  for (DateTime occurrence in occurrences) {
+    DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
+        occurrence.day, updatedEvent.startTime!.hour, updatedEvent.startTime!.minute);
+    DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
+        occurrence.day, updatedEvent.endTime!.hour, updatedEvent.endTime!.minute);
+
+    QueryDocumentSnapshot? blockingEvent =
+        await findBlockingEvent(startDateTime, endDateTime, docId);
+    if (blockingEvent != null) {
+      // Show a dialog box with blocking event details
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Event Conflict"),
+            content: Text(
+                "The event '${blockingEvent['itemName']}' scheduled on ${blockingEvent['startDateTime'].toDate()} conflicts with your updated event."),
+            actions: [
+              TextButton(
+                child: const Text("OK"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+      return; // Stop the function if there is a conflict
+    }
+  }
+
+  // If no overlaps are found, update the event itself
+  await FirebaseFirestore.instance.collection('Events').doc(docId).update({
+    'userId': updatedEvent.userId,
+    'eventName': updatedEvent.eventName,
+    'startTime': updatedEvent.startTime,
+    'endTime': updatedEvent.endTime,
+    'startDate': updatedEvent.startDate,
+  });
+
+  // Fetch existing DailyItems for the event
+  var existingDailyItems = await FirebaseFirestore.instance
+      .collection('DailyItems')
+      .where('refId', isEqualTo: docId)
+      .get();
+
+  // If the number of occurrences differs from the existing daily items, delete the old ones and create new ones
+  if (existingDailyItems.docs.length != occurrences.length) {
+    for (var element in existingDailyItems.docs) {
+      await element.reference.delete();
+    }
+
+    for (DateTime occurrence in occurrences) {
+      DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
+          occurrence.day, updatedEvent.startTime!.hour, updatedEvent.startTime!.minute);
+      DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
+          occurrence.day, updatedEvent.endTime!.hour, updatedEvent.endTime!.minute);
+
+      await FirebaseFirestore.instance.collection('DailyItems').add({
+        "duration": endDateTime.difference(startDateTime).inHours,
+        "endDateTime": endDateTime,
+        "isEvent": true,
+        "itemName": updatedEvent.eventName,
+        "startDateTime": startDateTime,
+        "userId": updatedEvent.userId,
+        "refId": docId,
+      });
+    }
+  } else {
+    // Otherwise, update existing items
+    for (int i = 0; i < occurrences.length; i++) {
+      var existingItem = existingDailyItems.docs[i];
+      DateTime occurrence = occurrences[i];
+      DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
+          occurrence.day, updatedEvent.startTime!.hour, updatedEvent.startTime!.minute);
+      DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
+          occurrence.day, updatedEvent.endTime!.hour, updatedEvent.endTime!.minute);
+
+      await existingItem.reference.update({
+        "duration": endDateTime.difference(startDateTime).inHours,
+        "endDateTime": endDateTime,
+        "isEvent": true,
+        "itemName": updatedEvent.eventName,
+        "startDateTime": startDateTime,
+        "userId": updatedEvent.userId,
+      });
+    }
+  }
+}
+
+
+// Helper method to find a blocking event
+
 
   Future<void> deleteEvent(String docId) async {
     await events.doc(docId).delete();

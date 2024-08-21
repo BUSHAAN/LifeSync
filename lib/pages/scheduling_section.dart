@@ -5,6 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/model/daily_item.dart';
 import 'package:flutter_todo_app/model/daily_item_data_source.dart';
+import 'package:flutter_todo_app/model/event.dart';
+import 'package:flutter_todo_app/model/meeting.dart';
+import 'package:flutter_todo_app/pages/event_details.dart';
 import 'package:flutter_todo_app/services/firestore.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
@@ -43,15 +46,17 @@ class _SchedulingSectionState extends State<SchedulingSection> {
               }
               if (snapshot.hasData) {
                 final List<Meeting> meetings = [];
-            final documents = snapshot.data!.docs;
+                final documents = snapshot.data!.docs;
 
                 for (var element in documents) {
-              final Map<String, dynamic> data = element.data() as Map<String, dynamic>;
-              final DateTime startTime = data['startDateTime'].toDate();
-              final DateTime endTime = startTime.add(Duration(hours: data["duration"]));
-              meetings.add(Meeting(
-                  data["itemName"], startTime, endTime, data["isEvent"] ? Colors.red : Colors.green, false));
-            }
+                  final Map<String, dynamic> data =
+                      element.data() as Map<String, dynamic>;
+                  final DateTime startTime = data['startDateTime'].toDate();
+                  final DateTime endTime =
+                      startTime.add(Duration(hours: data["duration"]));
+                  meetings.add(Meeting(data["itemName"], startTime, endTime,
+                      data["isEvent"] ? Colors.red : Colors.green, false, data["refId"]));
+                }
                 return SfCalendar(
                   view: CalendarView.month,
                   allowedViews: [
@@ -73,70 +78,61 @@ class _SchedulingSectionState extends State<SchedulingSection> {
                       agendaViewHeight: 200,
                       agendaItemHeight: 50,
                       navigationDirection: MonthNavigationDirection.horizontal),
-                      showTodayButton: true,
-                      minDate: DateTime.now(),
-                      firstDayOfWeek:1,
+                  showTodayButton: true,
+                  minDate: DateTime.now(),
+                  firstDayOfWeek: 1,
+                  appointmentBuilder: (context, details) {
+                    final Meeting meeting = details.appointments.first;
+                    return GestureDetector(
+                      onTap: ()async{
+                        final data = await fireStoreService.getEventData(meeting.id);
+                        Event event = Event(
+                                  userId: data['userId'],
+                                  eventName: data['eventName'],
+                                  startTime:
+                                      (data['startTime'] as Timestamp).toDate(),
+                                  endTime:
+                                      (data['endTime'] as Timestamp).toDate(),
+                                  frequency: data['frequency'],
+                                  selectedWeekdays:
+                                      data['selectedWeekdays'] != null
+                                          ? (data['selectedWeekdays']
+                                                  as List<dynamic>)
+                                              .map((e) => e as int)
+                                              .toList()
+                                          : null,
+                                  startDate:
+                                      data['frequency'] == "One-Time"
+                                          ? (data['startDate'] as Timestamp)
+                                              .toDate()
+                                          : null,
+                                );
+                        Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EventDetails(
+                                        event: event, documentId: meeting.id),
+                                  ),
+                                );
+                      },
+                      child: Container(
+                        width: details.bounds.width,
+                        height: details.bounds.height,
+                        color: meeting.background,
+                        child: Center(
+                          child: Text(
+                            meeting.eventName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 );
               }
               return const Center(child: CircularProgressIndicator());
             }));
   }
-
-  Future<List<Meeting>> _getDataSource() async {
-    final List<Meeting> meetings = <Meeting>[];
-
-    await fireStoreService.getDailyItemStream(user!.uid).listen((event) {
-      event.docs.forEach((element) {
-        final Map<String, dynamic> data =
-            element.data() as Map<String, dynamic>;
-        final DateTime startTime = data['startDateTime'].toDate();
-        final DateTime endTime = startTime.add(Duration(hours: data["duration"]));
-        meetings.add(Meeting(data["itemName"], startTime, endTime,
-            data["isEvent"] ? Colors.red : Colors.green,
-            false));
-      });
-    });
-
-    return meetings;
-  }
-}
-
-class MeetingDataSource extends CalendarDataSource {
-  MeetingDataSource(List<Meeting> source) {
-    appointments = source;
-  }
-
-  @override
-  DateTime getStartTime(int index) {
-    return appointments![index].from;
-  }
-
-  @override
-  DateTime getEndTime(int index) {
-    return appointments![index].to;
-  }
-
-  @override
-  String getSubject(int index) {
-    return appointments![index].eventName;
-  }
-
-  @override
-  Color getColor(int index) {
-    return appointments![index].background;
-  }
-
-  @override
-  bool isAllDay(int index) {
-    return appointments![index].isAllDay;
-  }
-}
-
-class Meeting {
-  Meeting(this.eventName, this.from, this.to, this.background, this.isAllDay);
-  String eventName;
-  DateTime from;
-  DateTime to;
-  Color background;
-  bool isAllDay;
 }
