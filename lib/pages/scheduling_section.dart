@@ -51,12 +51,27 @@ class _SchedulingSectionState extends State<SchedulingSection> {
                 for (var element in documents) {
                   final Map<String, dynamic> data =
                       element.data() as Map<String, dynamic>;
-                  final DateTime startTime = data['startDateTime'].toDate();
-                  final DateTime endTime =
-                      startTime.add(Duration(hours: data["duration"]));
-                  meetings.add(Meeting(data["itemName"], startTime, endTime,
-                      data["isEvent"] ? Colors.red : Colors.green, false, data["refId"]));
+
+                  // Check if 'startDateTime' exists and is not null
+                  final Timestamp? startTimestamp =
+                      data['startDateTime'] as Timestamp?;
+                  if (startTimestamp != null) {
+                    final DateTime startTime = startTimestamp.toDate();
+                    final int durationHours =
+                        data['duration'] ?? 0; // Default to 0 if null
+                    final DateTime endTime =
+                        startTime.add(Duration(hours: durationHours));
+                    meetings.add(Meeting(
+                      data["itemName"],
+                      startTime,
+                      endTime,
+                      data["isEvent"] ? Colors.red : Colors.green,
+                      false,
+                      data["refId"],
+                    ));
+                  }
                 }
+
                 return SfCalendar(
                   view: CalendarView.month,
                   allowedViews: [
@@ -72,48 +87,46 @@ class _SchedulingSectionState extends State<SchedulingSection> {
                   dataSource: MeetingDataSource(meetings),
                   onTap: calendarTapped,
                   monthViewSettings: MonthViewSettings(
-                      appointmentDisplayMode:
-                          MonthAppointmentDisplayMode.indicator,
-                      showAgenda: true,
-                      agendaViewHeight: 200,
-                      agendaItemHeight: 50,
-                      navigationDirection: MonthNavigationDirection.horizontal),
+                    appointmentDisplayMode:
+                        MonthAppointmentDisplayMode.indicator,
+                    showAgenda: true,
+                    agendaViewHeight: 200,
+                    agendaItemHeight: 50,
+                    navigationDirection: MonthNavigationDirection.horizontal,
+                  ),
                   showTodayButton: true,
                   minDate: DateTime.now(),
                   firstDayOfWeek: 1,
                   appointmentBuilder: (context, details) {
                     final Meeting meeting = details.appointments.first;
                     return GestureDetector(
-                      onTap: ()async{
-                        final data = await fireStoreService.getEventData(meeting.id);
+                      onTap: () async {
+                        final data =
+                            await fireStoreService.getEventData(meeting.id);
                         Event event = Event(
-                                  userId: data['userId'],
-                                  eventName: data['eventName'],
-                                  startTime:
-                                      (data['startTime'] as Timestamp).toDate(),
-                                  endTime:
-                                      (data['endTime'] as Timestamp).toDate(),
-                                  frequency: data['frequency'],
-                                  selectedWeekdays:
-                                      data['selectedWeekdays'] != null
-                                          ? (data['selectedWeekdays']
-                                                  as List<dynamic>)
-                                              .map((e) => e as int)
-                                              .toList()
-                                          : null,
-                                  startDate:
-                                      data['frequency'] == "One-Time"
-                                          ? (data['startDate'] as Timestamp)
-                                              .toDate()
-                                          : null,
-                                );
+                          userId: data['userId'],
+                          eventName: data['eventName'],
+                          startTime: (data['startTime'] as Timestamp).toDate(),
+                          endTime: (data['endTime'] as Timestamp).toDate(),
+                          frequency: data['frequency'],
+                          selectedWeekdays: data['selectedWeekdays'] != null
+                              ? (data['selectedWeekdays'] as List<dynamic>)
+                                  .map((e) => e as int)
+                                  .toList()
+                              : null,
+                          startDate: data['frequency'] == "One-Time"
+                              ? (data['startDate'] as Timestamp).toDate()
+                              : null,
+                        );
                         Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => EventDetails(
-                                        event: event, documentId: meeting.id),
-                                  ),
-                                );
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EventDetails(
+                              event: event,
+                              documentId: meeting.id,
+                            ),
+                          ),
+                        );
                       },
                       child: Container(
                         width: details.bounds.width,
