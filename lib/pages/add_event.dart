@@ -324,37 +324,64 @@ class _AddEventPageState extends State<AddEventPage> {
                   ),
                 ),
                 ElevatedButton(
-  onPressed: () async {
-    Map<String, dynamic>? result = await fireStoreService.addEventDetails(newEvent);
-    
-    if (result != null && result['hasConflict']) {
-      QueryDocumentSnapshot blockingEvent = result['blockingEvent'];
+                  onPressed: () async {
+                    Map<String, dynamic>? result =
+                        await fireStoreService.addEventDetails(newEvent);
 
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("Event Conflict"),
-            content: Text(
-                "The event '${blockingEvent['itemName']}' scheduled on ${blockingEvent['startDateTime'].toDate()} conflicts with your new event."),
-            actions: [
-              TextButton(
-                child: const Text("OK"),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
-    } else {
-      Navigator.pop(context); // Close the dialog if the event is added successfully
-    }
-  },
-  child: Text('Save Changes'),
-),
+                    if (result != null && result['hasConflict']) {
+                      QueryDocumentSnapshot blockingEvent =
+                          result['blockingEvent'];
 
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text("Event Conflict"),
+                            content: blockingEvent['frequency'] == 'One-Time'
+                                ? Text(
+                                    "The event '${blockingEvent['eventName']}' scheduled on ${blockingEvent['startDate'].toDate().day}-${blockingEvent['startDate'].toDate().month}-${blockingEvent['startDate'].toDate().year} conflicts with your new event.")
+                                : blockingEvent['frequency'] == 'Weekly'
+                                    ? Text(
+                                        "The event '${blockingEvent['eventName']}' scheduled weekly on ${blockingEvent['selectedWeekdays'].map((weekday) {
+                                        switch (weekday) {
+                                          case DateTime.monday:
+                                            return 'Monday';
+                                          case DateTime.tuesday:
+                                            return 'Tuesday';
+                                          case DateTime.wednesday:
+                                            return 'Wednesday';
+                                          case DateTime.thursday:
+                                            return 'Thursday';
+                                          case DateTime.friday:
+                                            return 'Friday';
+                                          case DateTime.saturday:
+                                            return 'Saturday';
+                                          case DateTime.sunday:
+                                            return 'Sunday';
+                                          default:
+                                            return '';
+                                        }
+                                      }).join(', ')} at ${blockingEvent['startTime'].toDate().hour}:${blockingEvent['startTime'].toDate().minute.toString().padLeft(2, '0')} conflicts with your new event.")
+                                    : Text(
+                                        "The event '${blockingEvent['eventName']}' scheduled daily at ${blockingEvent['startTime'].toDate().hour}:${blockingEvent['startTime'].toDate().minute.toString().padLeft(2, '0')} conflicts with your new event."),
+                            actions: [
+                              TextButton(
+                                child: const Text("OK"),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    } else {
+                      Navigator.pop(
+                          context); // Close the dialog if the event is added successfully
+                    }
+                  },
+                  child: Text('Save Changes'),
+                ),
               ],
             ),
           ),
