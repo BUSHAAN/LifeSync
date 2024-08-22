@@ -255,7 +255,7 @@ class _EventDetailsState extends State<EventDetails> {
                                   : null;
                           fireStoreService.updateEvent(
                               widget.documentId, widget.event, context);
-                          Navigator.pop(context);
+                          
                         });
                       },
                       child: Text('Save Changes'),

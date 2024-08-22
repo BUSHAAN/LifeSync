@@ -55,12 +55,12 @@ class _SchedulingSectionState extends State<SchedulingSection> {
                   // Check if 'startDateTime' exists and is not null
                   final Timestamp? startTimestamp =
                       data['startDateTime'] as Timestamp?;
-                  if (startTimestamp != null) {
+                  final Timestamp? endTimestamp =
+                      data['endDateTime'] as Timestamp?;
+
+                  if (startTimestamp != null && endTimestamp != null) {
                     final DateTime startTime = startTimestamp.toDate();
-                    final int durationHours =
-                        data['duration'] ?? 0; // Default to 0 if null
-                    final DateTime endTime =
-                        startTime.add(Duration(hours: durationHours));
+                    final DateTime endTime = endTimestamp.toDate();
                     meetings.add(Meeting(
                       data["itemName"],
                       startTime,

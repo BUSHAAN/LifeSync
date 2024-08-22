@@ -93,96 +93,6 @@ class FireStoreService {
     return occurrences;
   }
 
-// Future<Map<String, dynamic>?> addEventDetail(Event event) async {
-//   // Prepare the list of occurrences
-//   Future<QueryDocumentSnapshot?> findBlockingEvent(
-//       DateTime startDateTime, DateTime endDateTime) async {
-//     var overlappingDailyItems = await dailyItems
-//         .where('userId', isEqualTo: event.userId)
-//         .where('isEvent', isEqualTo: true)
-//         .where('startDateTime', isGreaterThanOrEqualTo: DateTime.now())
-//         .where('startDateTime', isLessThan: endDateTime)
-//         .where('endDateTime', isGreaterThan: startDateTime)
-//         .limit(1)
-//         .get();
-
-//     return overlappingDailyItems.docs.isNotEmpty
-//         ? overlappingDailyItems.docs.first
-//         : null;
-//   }
-
-//   List<DateTime> occurrences;
-//   if (event.frequency == "One-Time") {
-//     occurrences = [
-//       DateTime(
-//           event.startDate!.year,
-//           event.startDate!.month,
-//           event.startDate!.day,
-//           event.startTime!.hour,
-//           event.startTime!.minute)
-//     ];
-//   } else if (event.frequency == "Weekly") {
-//     occurrences =
-//         calculateNextOccurrences(event.selectedWeekdays!, event.startTime!);
-//   } else if (event.frequency == "Daily") {
-//     occurrences =
-//         calculateNextOccurrences([1, 2, 3, 4, 5, 6, 7], event.startTime!);
-//   } else {
-//     throw Exception("Invalid event frequency");
-//   }
-
-//   // First, check for overlaps for all occurrences
-//   for (DateTime occurrence in occurrences) {
-//     DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
-//         occurrence.day, event.startTime!.hour, event.startTime!.minute);
-//     DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
-//         occurrence.day, event.endTime!.hour, event.endTime!.minute);
-
-//     QueryDocumentSnapshot? blockingEvent =
-//         await findBlockingEvent(startDateTime, endDateTime);
-//     if (blockingEvent != null) {
-//       // Return the blocking event details as a map
-//       return {
-//         'hasConflict': true,
-//         'blockingEvent': blockingEvent,
-//       };
-//     }
-//   }
-
-//   // If no overlaps are found, add the event and daily items
-//   DocumentReference<Map<String, dynamic>> docRef =
-//       await FirebaseFirestore.instance.collection("Events").add({
-//     "userId": event.userId,
-//     "eventName": event.eventName,
-//     "startTime": event.startTime,
-//     "endTime": event.endTime,
-//     "frequency": event.frequency,
-//     "selectedWeekdays": event.selectedWeekdays,
-//     "startDate": event.startDate,
-//   });
-
-//   for (DateTime occurrence in occurrences) {
-//     DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
-//         occurrence.day, event.startTime!.hour, event.startTime!.minute);
-//     DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
-//         occurrence.day, event.endTime!.hour, event.endTime!.minute);
-//     await dailyItems.add({
-//       "userId": event.userId,
-//       "itemName": event.eventName,
-//       "isEvent": true,
-//       "startDateTime": startDateTime,
-//       "endDateTime": endDateTime,
-//       "duration": event.endTime == null
-//           ? 0
-//           : event.endTime!.difference(event.startTime!).inHours,
-//       "refId": docRef.id,
-//     });
-//   }
-
-//   // Return null if no conflicts are found
-//   return null;
-// }
-
   Future<Map<String, dynamic>?> addEventDetails(Event event) async {
     // Prepare the list of occurrences based on event frequency
     List<DateTime> occurrences;
@@ -205,30 +115,13 @@ class FireStoreService {
       throw Exception("Invalid event frequency");
     }
 
-    // First, check for overlaps for all occurrences
-    for (DateTime occurrence in occurrences) {
-      DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
-          occurrence.day, event.startTime!.hour, event.startTime!.minute);
-      DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
-          occurrence.day, event.endTime!.hour, event.endTime!.minute);
-
-      // QueryDocumentSnapshot? blockingEvent =
-      //     await findBlockingEvent(startDateTime, endDateTime);
-      // if (blockingEvent != null) {
-      //   // Return the blocking event details as a map
-      //   return {
-      //     'hasConflict': true,
-      //     'blockingEvent': blockingEvent,
-      //   };
-      // }
-      QueryDocumentSnapshot? conflictResult = await _checkForConflicts(event);
-      if (conflictResult != null) {
-        // If a conflict is found, return the conflicting event
-        return {
-          'hasConflict': true,
-          'blockingEvent': conflictResult,
-        };
-      }
+    QueryDocumentSnapshot? conflictResult = await _checkForConflicts(event);
+    if (conflictResult != null) {
+      // If a conflict is found, return the conflicting event
+      return {
+        'hasConflict': true,
+        'blockingEvent': conflictResult,
+      };
     }
 
     // If no overlaps are found, add the event to Events collection
@@ -267,103 +160,110 @@ class FireStoreService {
   }
 
 //Conflict checking helper function
-  Future<QueryDocumentSnapshot?> _checkForConflicts(Event newEvent) async {
-    // If the event is One-Time
-    if (newEvent.frequency == 'One-Time') {
-      // Check for conflicts with daily events
-      var dailyConflicts = await events
-          .where('userId', isEqualTo: newEvent.userId)
-          .where('frequency', isEqualTo: 'Daily')
-          .where('startTime', isLessThanOrEqualTo: newEvent.endTime)
-          .where('endTime', isGreaterThanOrEqualTo: newEvent.startTime)
-          .get();
-      if (dailyConflicts.docs.isNotEmpty) {
-        return dailyConflicts.docs.first;
-      }
+  Future<QueryDocumentSnapshot<Map<String, dynamic>>?> _checkForConflicts(
+    Event newEvent, {String? excludeEventId}) async {
 
-      // Check for conflicts with weekly events
-      int eventWeekday = newEvent.startDate!.weekday;
-      var weeklyConflicts = await events
+  // Helper function to get conflicts based on query
+  Future<QueryDocumentSnapshot<Map<String, dynamic>>?> getConflictingEvent(
+      Query<Map<String, dynamic>> query) async {
+    var querySnapshot = await query.get();
+    for (var doc in querySnapshot.docs) {
+      if (excludeEventId == null || doc.id != excludeEventId) {
+        return doc;
+      }
+    }
+    return null;
+  }
+
+  // If the event is One-Time
+  if (newEvent.frequency == 'One-Time') {
+    // Check for conflicts with daily events
+    var dailyConflictsQuery = events
+        .where('userId', isEqualTo: newEvent.userId)
+        .where('startTime', isLessThan: newEvent.endTime)
+        .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
+
+    var dailyConflict = await getConflictingEvent(dailyConflictsQuery);
+    if (dailyConflict != null) return dailyConflict;
+
+    // Check for conflicts with weekly events
+    int eventWeekday = newEvent.startDate!.weekday;
+    var weeklyConflictsQuery = events
+        .where('userId', isEqualTo: newEvent.userId)
+        .where('frequency', isEqualTo: 'Weekly')
+        .where('selectedWeekdays', arrayContains: eventWeekday)
+        .where('startTime', isLessThan: newEvent.endTime)
+        .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
+
+    var weeklyConflict = await getConflictingEvent(weeklyConflictsQuery);
+    if (weeklyConflict != null) return weeklyConflict;
+
+    // Check for conflicts with other one-time events
+    var oneTimeConflictsQuery = events
+        .where('userId', isEqualTo: newEvent.userId)
+        .where('frequency', isEqualTo: 'One-Time')
+        .where('startDate', isEqualTo: newEvent.startDate)
+        .where('startTime', isLessThan: newEvent.endTime)
+        .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
+
+    var oneTimeConflict = await getConflictingEvent(oneTimeConflictsQuery);
+    if (oneTimeConflict != null) return oneTimeConflict;
+  }
+
+  // If the event is Weekly
+  if (newEvent.frequency == 'Weekly') {
+    // Check for conflicts with daily events
+    var dailyConflictsQuery = events
+        .where('userId', isEqualTo: newEvent.userId)
+        .where('startTime', isLessThan: newEvent.endTime)
+        .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
+
+    var dailyConflict = await getConflictingEvent(dailyConflictsQuery);
+    if (dailyConflict != null) return dailyConflict;
+
+    // Check for conflicts with other weekly events
+    for (int weekday in newEvent.selectedWeekdays!) {
+      var weeklyConflictsQuery = events
           .where('userId', isEqualTo: newEvent.userId)
           .where('frequency', isEqualTo: 'Weekly')
-          .where('selectedWeekdays', arrayContains: eventWeekday)
-          .where('startTime', isLessThanOrEqualTo: newEvent.endTime)
-          .where('endTime', isGreaterThanOrEqualTo: newEvent.startTime)
-          .get();
-      if (weeklyConflicts.docs.isNotEmpty) {
-        return weeklyConflicts.docs.first;
-      }
+          .where('selectedWeekdays', arrayContains: weekday)
+          .where('startTime', isLessThan: newEvent.endTime)
+          .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
 
-      // Check for conflicts with other one-time events
-      var oneTimeConflicts = await events
-          .where('userId', isEqualTo: newEvent.userId)
-          .where('frequency', isEqualTo: 'One-Time')
-          .where('startDate', isEqualTo: newEvent.startDate)
-          .where('startTime', isLessThanOrEqualTo: newEvent.endTime)
-          .where('endTime', isGreaterThanOrEqualTo: newEvent.startTime)
-          .get();
-      if (oneTimeConflicts.docs.isNotEmpty) {
-        return oneTimeConflicts.docs.first;
-      }
+      var weeklyConflict = await getConflictingEvent(weeklyConflictsQuery);
+      if (weeklyConflict != null) return weeklyConflict;
     }
 
-    // If the event is Weekly
-    if (newEvent.frequency == 'Weekly') {
-      // Check for conflicts with daily events
-      var dailyConflicts = await events
-          .where('userId', isEqualTo: newEvent.userId)
-          .where('frequency', isEqualTo: 'Daily')
-          .where('startTime', isLessThanOrEqualTo: newEvent.endTime)
-          .where('endTime', isGreaterThanOrEqualTo: newEvent.startTime)
-          .get();
-      if (dailyConflicts.docs.isNotEmpty) {
-        return dailyConflicts.docs.first;
-      }
+    // Check for conflicts with one-time events
+    var oneTimeConflictsQuery = events
+        .where('userId', isEqualTo: newEvent.userId)
+        .where('frequency', isEqualTo: 'One-Time')
+        .where('startTime', isLessThan: newEvent.endTime)
+        .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
 
-      // Check for conflicts with other weekly events
-      for (int weekday in newEvent.selectedWeekdays!) {
-        var weeklyConflicts = await events
-            .where('userId', isEqualTo: newEvent.userId)
-            .where('frequency', isEqualTo: 'Weekly')
-            .where('selectedWeekdays', arrayContains: weekday)
-            .where('startTime', isLessThanOrEqualTo: newEvent.endTime)
-            .where('endTime', isGreaterThanOrEqualTo: newEvent.startTime)
-            .get();
-        if (weeklyConflicts.docs.isNotEmpty) {
-          return weeklyConflicts.docs.first;
-        }
-      }
-
-      // Check for conflicts with one-time events
-      var oneTimeConflicts = await events
-          .where('userId', isEqualTo: newEvent.userId)
-          .where('frequency', isEqualTo: 'One-Time')
-          .where('startTime', isLessThanOrEqualTo: newEvent.endTime)
-          .where('endTime', isGreaterThanOrEqualTo: newEvent.startTime)
-          .get();
-      if (oneTimeConflicts.docs.isNotEmpty) {
-        DateTime eventDay = oneTimeConflicts.docs.first['startDate'].toDate();
-        if (newEvent.selectedWeekdays!.contains(eventDay.weekday)) {
-          return oneTimeConflicts.docs.first;
-        }
+    var oneTimeConflict = await getConflictingEvent(oneTimeConflictsQuery);
+    if (oneTimeConflict != null) {
+      DateTime eventDay = (oneTimeConflict['startDate'] as Timestamp).toDate();
+      if (newEvent.selectedWeekdays!.contains(eventDay.weekday)) {
+        return oneTimeConflict;
       }
     }
-
-    // If the event is Daily
-    if (newEvent.frequency == 'Daily') {
-      // Check for conflicts with any other event
-      var conflicts = await events
-          .where('userId', isEqualTo: newEvent.userId)
-          .where('startTime', isLessThanOrEqualTo: newEvent.endTime)
-          .where('endTime', isGreaterThanOrEqualTo: newEvent.startTime)
-          .get();
-      if (conflicts.docs.isNotEmpty) {
-        return conflicts.docs.first;
-      }
-    }
-
-    return null; // No conflict found
   }
+
+  // If the event is Daily
+  if (newEvent.frequency == 'Daily') {
+    // Check for conflicts with any existing event
+    var conflictsQuery = events
+        .where('userId', isEqualTo: newEvent.userId)
+        .where('startTime', isLessThan: newEvent.endTime)
+        .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
+
+    var conflict = await getConflictingEvent(conflictsQuery);
+    if (conflict != null) return conflict;
+  }
+
+  return null; // No conflict found
+}
 
 // Helper function to get the date of the next occurrence of a given weekday
   DateTime _getDateForNextWeekday(int weekday) {
@@ -392,24 +292,6 @@ class FireStoreService {
 
   Future<void> updateEvent(
       String docId, Event updatedEvent, BuildContext context) async {
-    Future<QueryDocumentSnapshot?> findBlockingEvent(
-        DateTime startDateTime, DateTime endDateTime, String docId) async {
-      var overlappingDailyItems = await dailyItems
-          .where('userId', isEqualTo: updatedEvent.userId)
-          .where('isEvent', isEqualTo: true)
-          .where('startDateTime', isGreaterThanOrEqualTo: DateTime.now())
-          .where('startDateTime', isLessThan: endDateTime)
-          .where('endDateTime', isGreaterThan: startDateTime)
-          .where('refId',
-              isNotEqualTo: docId) // Ensure the current event is excluded
-          .limit(1)
-          .get();
-
-      return overlappingDailyItems.docs.isNotEmpty
-          ? overlappingDailyItems.docs.first
-          : null;
-    }
-
     // Prepare the list of occurrences based on the event frequency
     List<DateTime> occurrences;
     if (updatedEvent.frequency == "One-Time") {
@@ -432,71 +314,57 @@ class FireStoreService {
     }
 
     // Check for overlaps for all occurrences
-    for (DateTime occurrence in occurrences) {
-      DateTime startDateTime = DateTime(
-          occurrence.year,
-          occurrence.month,
-          occurrence.day,
-          updatedEvent.startTime!.hour,
-          updatedEvent.startTime!.minute);
-      DateTime endDateTime = DateTime(
-          occurrence.year,
-          occurrence.month,
-          occurrence.day,
-          updatedEvent.endTime!.hour,
-          updatedEvent.endTime!.minute);
 
-      QueryDocumentSnapshot? blockingEvent =
-          await findBlockingEvent(startDateTime, endDateTime, docId);
-      if (blockingEvent != null) {
-        // Show a dialog box with blocking event details
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text("Event Conflict"),
-              content: blockingEvent['frequency'] == 'One-Time'
-                  ? Text(
-                      "The event '${blockingEvent['eventName']}' scheduled on ${blockingEvent['startDate'].toDate().day}-${blockingEvent['startDate'].toDate().month}-${blockingEvent['startDate'].toDate().year} conflicts with your new event.")
-                  : blockingEvent['frequency'] == 'Weekly'
-                      ? Text(
-                          "The event '${blockingEvent['eventName']}' scheduled weekly on ${blockingEvent['selectedWeekdays'].map((weekday) {
-                          switch (weekday) {
-                            case DateTime.monday:
-                              return 'Monday';
-                            case DateTime.tuesday:
-                              return 'Tuesday';
-                            case DateTime.wednesday:
-                              return 'Wednesday';
-                            case DateTime.thursday:
-                              return 'Thursday';
-                            case DateTime.friday:
-                              return 'Friday';
-                            case DateTime.saturday:
-                              return 'Saturday';
-                            case DateTime.sunday:
-                              return 'Sunday';
-                            default:
-                              return '';
-                          }
-                        }).join(', ')} at ${blockingEvent['startTime'].toDate().hour}:${blockingEvent['startTime'].toDate().minute.toString().padLeft(2, '0')} conflicts with your new event.")
-                      : Text(
-                          "The event '${blockingEvent['eventName']}' scheduled daily at ${blockingEvent['startTime'].toDate().hour}:${blockingEvent['startTime'].toDate().minute.toString().padLeft(2, '0')} conflicts with your new event."),
-              actions: [
-                TextButton(
-                  child: const Text("OK"),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-        return; // Stop the function if there is a conflict
-      }
+    QueryDocumentSnapshot? blockingEvent =
+        await _checkForConflicts(updatedEvent, excludeEventId: docId);
+    if (blockingEvent != null) {
+      // Show a dialog box with blocking event details
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Event Conflict"),
+            content: blockingEvent['frequency'] == 'One-Time'
+                ? Text(
+                    "The event '${blockingEvent['eventName']}' scheduled on ${blockingEvent['startDate'].toDate().day}-${blockingEvent['startDate'].toDate().month}-${blockingEvent['startDate'].toDate().year} conflicts with your new event.")
+                : blockingEvent['frequency'] == 'Weekly'
+                    ? Text(
+                        "The event '${blockingEvent['eventName']}' scheduled weekly on ${blockingEvent['selectedWeekdays'].map((weekday) {
+                        switch (weekday) {
+                          case DateTime.monday:
+                            return 'Monday';
+                          case DateTime.tuesday:
+                            return 'Tuesday';
+                          case DateTime.wednesday:
+                            return 'Wednesday';
+                          case DateTime.thursday:
+                            return 'Thursday';
+                          case DateTime.friday:
+                            return 'Friday';
+                          case DateTime.saturday:
+                            return 'Saturday';
+                          case DateTime.sunday:
+                            return 'Sunday';
+                          default:
+                            return '';
+                        }
+                      }).join(', ')} at ${blockingEvent['startTime'].toDate().hour}:${blockingEvent['startTime'].toDate().minute.toString().padLeft(2, '0')} conflicts with your new event.")
+                    : Text(
+                        "The event '${blockingEvent['eventName']}' scheduled daily at ${blockingEvent['startTime'].toDate().hour}:${blockingEvent['startTime'].toDate().minute.toString().padLeft(2, '0')} conflicts with your new event."),
+            actions: [
+              TextButton(
+                child: const Text("OK"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+      return; // Stop the function if there is a conflict
     }
-
+    Navigator.of(context).pop();
     // If no overlaps are found, update the event itself
     await events.doc(docId).update({
       'userId': updatedEvent.userId,
