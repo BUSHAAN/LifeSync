@@ -3,7 +3,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_todo_app/model/daily_item.dart';
 import 'package:flutter_todo_app/model/daily_item_data_source.dart';
 import 'package:flutter_todo_app/model/event.dart';
 import 'package:flutter_todo_app/model/meeting.dart';
@@ -34,7 +33,7 @@ class _SchedulingSectionState extends State<SchedulingSection> {
   }
 
   final CalendarController _controller = CalendarController();
-  Color? _headerColor, _viewHeaderColor, _calendarColor;
+  Color?  _viewHeaderColor, _calendarColor;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
