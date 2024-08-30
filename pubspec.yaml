@@ -39,6 +39,8 @@ dependencies:
   firebase_auth: 
   syncfusion_flutter_calendar: 
   provider: 
+  http:
+  workmanager:
 
 dev_dependencies:
   flutter_test:

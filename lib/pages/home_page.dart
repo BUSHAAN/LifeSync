@@ -4,7 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/pages/all_events_page.dart';
 import 'package:flutter_todo_app/pages/all_tasks_page.dart';
+import 'package:flutter_todo_app/pages/prediction.dart';
 import 'package:flutter_todo_app/pages/scheduling_section.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,6 +17,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final user = FirebaseAuth.instance.currentUser;
+  bool _hasNewPrediction = false;
 
   void signUserOut() async {
     await FirebaseAuth.instance.signOut();
@@ -33,6 +36,39 @@ class _HomePageState extends State<HomePage> {
               color: Colors.white,
             )),
           ),
+          actions: [
+            IconButton(
+                icon: Icon(Icons.insights), // Use an appropriate icon
+                onPressed: () {
+                  // Navigate to the prediction page
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => PredictionPage()),
+                  );
+                  
+                  // Reset the new prediction indicator once the user views the page
+                  setState(() {
+                    _hasNewPrediction = false;
+                  });
+                },
+              ),
+              if (_hasNewPrediction)
+                Positioned(
+                  right: 11,
+                  top: 11,
+                  child: Container(
+                    padding: EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    constraints: BoxConstraints(
+                      minWidth: 12,
+                      minHeight: 12,
+                    ),
+                  ),
+                ),
+          ],
           backgroundColor: Colors.blue.shade600,
         ),
         drawer: Drawer(
@@ -78,6 +114,16 @@ class _HomePageState extends State<HomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => AllEventsPage()),
+                  );
+                },
+              ),
+              ListTile(
+                title: const Text('Prediction Page'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => PredictionPage()),
                   );
                 },
               ),
