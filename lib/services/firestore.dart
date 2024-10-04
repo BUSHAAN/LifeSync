@@ -180,10 +180,10 @@ class FireStoreService {
       // Check for conflicts with daily events
       var dailyConflictsQuery = events
               .where('userId', isEqualTo: newEvent.userId)
-              .where('frequency', isEqualTo: 'One-Time')
-              .where('startDate', isEqualTo: newEvent.startDate)
+              .where('frequency', isEqualTo: 'Daily')
               .where('startTime', isLessThan: newEvent.endTime)
-              .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
+              .where('endTime', isGreaterThan: newEvent.startTime)
+              as Query<Map<String, dynamic>>;
 
       var dailyConflict = await getConflictingEvent(dailyConflictsQuery);
       if (dailyConflict != null) return dailyConflict;
@@ -219,6 +219,7 @@ class FireStoreService {
       // Check for conflicts with daily events
       var dailyConflictsQuery = events
               .where('userId', isEqualTo: newEvent.userId)
+              .where('frequency', isEqualTo: 'Daily')
               .where('startTime', isLessThan: newEvent.endTime)
               .where('endTime', isGreaterThan: newEvent.startTime)
           as Query<Map<String, dynamic>>;
