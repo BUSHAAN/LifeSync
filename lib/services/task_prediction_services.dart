@@ -1,9 +1,9 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_todo_app/model/schedules.dart';
 import 'dart:convert'; // For jsonEncode
 import 'package:http/http.dart' as http;
-
 
 class MLServices {
   final CollectionReference dailyItems =
@@ -18,14 +18,13 @@ class MLServices {
     var currentTaskQuery = await FirebaseFirestore.instance
         .collection('DailyItems')
         .where('userId', isEqualTo: userId)
-        .where('isEvent', isEqualTo: false)
         .where('startDateTime', isLessThanOrEqualTo: now)
         .where('endDateTime', isGreaterThan: now)
         .limit(1)
         .get();
 
     // If there's a task scheduled right now, return true
-    if (currentTaskQuery.docs.isNotEmpty) {
+    if (currentTaskQuery.docs.isEmpty) {
       return true;
     }
 
@@ -33,13 +32,16 @@ class MLServices {
     var freeSlotQuery = await FirebaseFirestore.instance
         .collection('DailyItems')
         .where('userId', isEqualTo: userId)
-        .where('isEvent', isEqualTo: false)
         .where('startDateTime', isLessThanOrEqualTo: fourHoursFromNow)
         .where('endDateTime', isGreaterThan: now)
         .get();
 
     // If there's a free slot in the next 4 hours, return true
-    return freeSlotQuery.docs.isEmpty;
+    if (freeSlotQuery.docs.isEmpty) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   Future<List<Map<String, dynamic>>> fetchLastTasks(
@@ -53,6 +55,7 @@ class MLServices {
         .collection('DailyItems')
         .where('userId', isEqualTo: userId)
         .where('isEvent', isEqualTo: false)
+        .where('startDateTime', isLessThan: now)
         .where('endDateTime', isGreaterThan: eightHoursAgo)
         .orderBy('endDateTime', descending: true)
         .limit(numberOfTasks)
@@ -147,18 +150,21 @@ class MLServices {
       print('You have a free slot in the next 4 hours');
       final tasks = await fetchLastTasks(userId, 2);
       final prediction = await sendTaskDataToApi(tasks);
-      // SharedPreferences prefs = await SharedPreferences.getInstance();
-      // if (prediction != null){
-      //   await prefs.setString('latest_prediction', prediction);
-      // }
-      // NotificationService notificationService = NotificationService();
-      // notificationService.showNotification(
-      //     "New Task Prediction Available", "Tap to see the suggestion.");
-
+      //print("prediction: $prediction");
+      if (prediction != null) {
+        AwesomeNotifications().createNotification(
+          content: NotificationContent(
+            id: 10,
+            channelKey: 'life_sync',
+            title: 'New Prediction',
+            body: 'You have a new prediction. Click to view',
+          ),
+        );
+      }
       return prediction; // Return the prediction
     } else {
       print('You have a task scheduled right now');
-      return null; // Return null if no prediction is made
+      return ('You have a task scheduled right now');
     }
   }
 }

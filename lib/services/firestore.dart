@@ -161,109 +161,118 @@ class FireStoreService {
 
 //Conflict checking helper function
   Future<QueryDocumentSnapshot<Map<String, dynamic>>?> _checkForConflicts(
-    Event newEvent, {String? excludeEventId}) async {
-
-  // Helper function to get conflicts based on query
-  Future<QueryDocumentSnapshot<Map<String, dynamic>>?> getConflictingEvent(
-      Query<Map<String, dynamic>> query) async {
-    var querySnapshot = await query.get();
-    for (var doc in querySnapshot.docs) {
-      if (excludeEventId == null || doc.id != excludeEventId) {
-        return doc;
+      Event newEvent,
+      {String? excludeEventId}) async {
+    // Helper function to get conflicts based on query
+    Future<QueryDocumentSnapshot<Map<String, dynamic>>?> getConflictingEvent(
+        Query<Map<String, dynamic>> query) async {
+      var querySnapshot = await query.get();
+      for (var doc in querySnapshot.docs) {
+        if (excludeEventId == null || doc.id != excludeEventId) {
+          return doc;
+        }
       }
+      return null;
     }
-    return null;
-  }
 
-  // If the event is One-Time
-  if (newEvent.frequency == 'One-Time') {
-    // Check for conflicts with daily events
-    var dailyConflictsQuery = events
-        .where('userId', isEqualTo: newEvent.userId)
-        .where('startTime', isLessThan: newEvent.endTime)
-        .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
+    // If the event is One-Time
+    if (newEvent.frequency == 'One-Time') {
+      // Check for conflicts with daily events
+      var dailyConflictsQuery = events
+              .where('userId', isEqualTo: newEvent.userId)
+              .where('frequency', isEqualTo: 'One-Time')
+              .where('startDate', isEqualTo: newEvent.startDate)
+              .where('startTime', isLessThan: newEvent.endTime)
+              .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
 
-    var dailyConflict = await getConflictingEvent(dailyConflictsQuery);
-    if (dailyConflict != null) return dailyConflict;
+      var dailyConflict = await getConflictingEvent(dailyConflictsQuery);
+      if (dailyConflict != null) return dailyConflict;
 
-    // Check for conflicts with weekly events
-    int eventWeekday = newEvent.startDate!.weekday;
-    var weeklyConflictsQuery = events
-        .where('userId', isEqualTo: newEvent.userId)
-        .where('frequency', isEqualTo: 'Weekly')
-        .where('selectedWeekdays', arrayContains: eventWeekday)
-        .where('startTime', isLessThan: newEvent.endTime)
-        .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
-
-    var weeklyConflict = await getConflictingEvent(weeklyConflictsQuery);
-    if (weeklyConflict != null) return weeklyConflict;
-
-    // Check for conflicts with other one-time events
-    var oneTimeConflictsQuery = events
-        .where('userId', isEqualTo: newEvent.userId)
-        .where('frequency', isEqualTo: 'One-Time')
-        .where('startDate', isEqualTo: newEvent.startDate)
-        .where('startTime', isLessThan: newEvent.endTime)
-        .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
-
-    var oneTimeConflict = await getConflictingEvent(oneTimeConflictsQuery);
-    if (oneTimeConflict != null) return oneTimeConflict;
-  }
-
-  // If the event is Weekly
-  if (newEvent.frequency == 'Weekly') {
-    // Check for conflicts with daily events
-    var dailyConflictsQuery = events
-        .where('userId', isEqualTo: newEvent.userId)
-        .where('startTime', isLessThan: newEvent.endTime)
-        .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
-
-    var dailyConflict = await getConflictingEvent(dailyConflictsQuery);
-    if (dailyConflict != null) return dailyConflict;
-
-    // Check for conflicts with other weekly events
-    for (int weekday in newEvent.selectedWeekdays!) {
+      // Check for conflicts with weekly events
+      int eventWeekday = newEvent.startDate!.weekday;
       var weeklyConflictsQuery = events
-          .where('userId', isEqualTo: newEvent.userId)
-          .where('frequency', isEqualTo: 'Weekly')
-          .where('selectedWeekdays', arrayContains: weekday)
-          .where('startTime', isLessThan: newEvent.endTime)
-          .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
+              .where('userId', isEqualTo: newEvent.userId)
+              .where('frequency', isEqualTo: 'Weekly')
+              .where('selectedWeekdays', arrayContains: eventWeekday)
+              .where('startTime', isLessThan: newEvent.endTime)
+              .where('endTime', isGreaterThan: newEvent.startTime)
+          as Query<Map<String, dynamic>>;
 
       var weeklyConflict = await getConflictingEvent(weeklyConflictsQuery);
       if (weeklyConflict != null) return weeklyConflict;
+
+      // Check for conflicts with other one-time events
+      var oneTimeConflictsQuery = events
+              .where('userId', isEqualTo: newEvent.userId)
+              .where('frequency', isEqualTo: 'One-Time')
+              .where('startDate', isEqualTo: newEvent.startDate)
+              .where('startTime', isLessThan: newEvent.endTime)
+              .where('endTime', isGreaterThan: newEvent.startTime)
+          as Query<Map<String, dynamic>>;
+
+      var oneTimeConflict = await getConflictingEvent(oneTimeConflictsQuery);
+      if (oneTimeConflict != null) return oneTimeConflict;
     }
 
-    // Check for conflicts with one-time events
-    var oneTimeConflictsQuery = events
-        .where('userId', isEqualTo: newEvent.userId)
-        .where('frequency', isEqualTo: 'One-Time')
-        .where('startTime', isLessThan: newEvent.endTime)
-        .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
+    // If the event is Weekly
+    if (newEvent.frequency == 'Weekly') {
+      // Check for conflicts with daily events
+      var dailyConflictsQuery = events
+              .where('userId', isEqualTo: newEvent.userId)
+              .where('startTime', isLessThan: newEvent.endTime)
+              .where('endTime', isGreaterThan: newEvent.startTime)
+          as Query<Map<String, dynamic>>;
 
-    var oneTimeConflict = await getConflictingEvent(oneTimeConflictsQuery);
-    if (oneTimeConflict != null) {
-      DateTime eventDay = (oneTimeConflict['startDate'] as Timestamp).toDate();
-      if (newEvent.selectedWeekdays!.contains(eventDay.weekday)) {
-        return oneTimeConflict;
+      var dailyConflict = await getConflictingEvent(dailyConflictsQuery);
+      if (dailyConflict != null) return dailyConflict;
+
+      // Check for conflicts with other weekly events
+      for (int weekday in newEvent.selectedWeekdays!) {
+        var weeklyConflictsQuery = events
+                .where('userId', isEqualTo: newEvent.userId)
+                .where('frequency', isEqualTo: 'Weekly')
+                .where('selectedWeekdays', arrayContains: weekday)
+                .where('startTime', isLessThan: newEvent.endTime)
+                .where('endTime', isGreaterThan: newEvent.startTime)
+            as Query<Map<String, dynamic>>;
+
+        var weeklyConflict = await getConflictingEvent(weeklyConflictsQuery);
+        if (weeklyConflict != null) return weeklyConflict;
+      }
+
+      // Check for conflicts with one-time events
+      var oneTimeConflictsQuery = events
+              .where('userId', isEqualTo: newEvent.userId)
+              .where('frequency', isEqualTo: 'One-Time')
+              .where('startTime', isLessThan: newEvent.endTime)
+              .where('endTime', isGreaterThan: newEvent.startTime)
+          as Query<Map<String, dynamic>>;
+
+      var oneTimeConflict = await getConflictingEvent(oneTimeConflictsQuery);
+      if (oneTimeConflict != null) {
+        DateTime eventDay =
+            (oneTimeConflict['startDate'] as Timestamp).toDate();
+        if (newEvent.selectedWeekdays!.contains(eventDay.weekday)) {
+          return oneTimeConflict;
+        }
       }
     }
+
+    // If the event is Daily
+    if (newEvent.frequency == 'Daily') {
+      // Check for conflicts with any existing event
+      var conflictsQuery = events
+              .where('userId', isEqualTo: newEvent.userId)
+              .where('startTime', isLessThan: newEvent.endTime)
+              .where('endTime', isGreaterThan: newEvent.startTime)
+          as Query<Map<String, dynamic>>;
+
+      var conflict = await getConflictingEvent(conflictsQuery);
+      if (conflict != null) return conflict;
+    }
+
+    return null; // No conflict found
   }
-
-  // If the event is Daily
-  if (newEvent.frequency == 'Daily') {
-    // Check for conflicts with any existing event
-    var conflictsQuery = events
-        .where('userId', isEqualTo: newEvent.userId)
-        .where('startTime', isLessThan: newEvent.endTime)
-        .where('endTime', isGreaterThan: newEvent.startTime) as Query<Map<String, dynamic>>;
-
-    var conflict = await getConflictingEvent(conflictsQuery);
-    if (conflict != null) return conflict;
-  }
-
-  return null; // No conflict found
-}
 
 // Helper function to get the date of the next occurrence of a given weekday
   DateTime _getDateForNextWeekday(int weekday) {

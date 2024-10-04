@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors, sort_child_properties_last, use_build_context_synchronously
 
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/pages/all_events_page.dart';
@@ -21,6 +22,16 @@ class _HomePageState extends State<HomePage> {
 
   void signUserOut() async {
     await FirebaseAuth.instance.signOut();
+  }
+  @override
+  void initState() {
+    print("Checking for new predictions");
+    AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
+      if (!isAllowed) {
+        AwesomeNotifications().requestPermissionToSendNotifications();
+      }
+    });
+    super.initState();
   }
 
   @override

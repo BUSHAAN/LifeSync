@@ -3,10 +3,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_todo_app/model/Task.dart';
 import 'package:flutter_todo_app/model/daily_item_data_source.dart';
 import 'package:flutter_todo_app/model/event.dart';
 import 'package:flutter_todo_app/model/meeting.dart';
 import 'package:flutter_todo_app/pages/event_details.dart';
+import 'package:flutter_todo_app/pages/task_details.dart';
 import 'package:flutter_todo_app/services/firestore.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
@@ -33,7 +35,7 @@ class _SchedulingSectionState extends State<SchedulingSection> {
   }
 
   final CalendarController _controller = CalendarController();
-  Color?  _viewHeaderColor, _calendarColor;
+  Color? _viewHeaderColor, _calendarColor;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,32 +102,48 @@ class _SchedulingSectionState extends State<SchedulingSection> {
                     final Meeting meeting = details.appointments.first;
                     return GestureDetector(
                       onTap: () async {
-                        final data =
-                            await fireStoreService.getEventData(meeting.id);
-                        Event event = Event(
-                          userId: data['userId'],
-                          eventName: data['eventName'],
-                          startTime: (data['startTime'] as Timestamp).toDate(),
-                          endTime: (data['endTime'] as Timestamp).toDate(),
-                          frequency: data['frequency'],
-                          selectedWeekdays: data['selectedWeekdays'] != null
-                              ? (data['selectedWeekdays'] as List<dynamic>)
-                                  .map((e) => e as int)
-                                  .toList()
-                              : null,
-                          startDate: data['frequency'] == "One-Time"
-                              ? (data['startDate'] as Timestamp).toDate()
-                              : null,
-                        );
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => EventDetails(
-                              event: event,
-                              documentId: meeting.id,
+                        if (meeting.background == Colors.red) {
+                          final data =
+                              await fireStoreService.getEventData(meeting.id);
+                          Event event = Event(
+                            userId: data['userId'],
+                            eventName: data['eventName'],
+                            startTime:
+                                (data['startTime'] as Timestamp).toDate(),
+                            endTime: (data['endTime'] as Timestamp).toDate(),
+                            frequency: data['frequency'],
+                            selectedWeekdays: data['selectedWeekdays'] != null
+                                ? (data['selectedWeekdays'] as List<dynamic>)
+                                    .map((e) => e as int)
+                                    .toList()
+                                : null,
+                            startDate: data['frequency'] == "One-Time"
+                                ? (data['startDate'] as Timestamp).toDate()
+                                : null,
+                          );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EventDetails(
+                                event: event,
+                                documentId: meeting.id,
+                              ),
                             ),
-                          ),
-                        );
+                          );
+                        } else {
+                          final data =
+                              await fireStoreService.getTaskData(meeting.id);
+                          
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TaskDetails(
+                                taskData: data,
+                                documentId: meeting.id,
+                              ),
+                            ),
+                          );
+                        }
                       },
                       child: Container(
                         width: details.bounds.width,
