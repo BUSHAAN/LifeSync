@@ -89,13 +89,13 @@ class _AddTasksPageState extends State<AddTasksPage> {
   Widget _viewSchedules(deadlineType) {
     switch (deadlineType) {
       case "Morning":
-        return Text("Morning (7am - 12am)");
+        return Text("Morning (7am - 12pm)");
       case "Afternoon":
         return Text("Afternoon (12am - 4pm)");
       case "Evening":
         return Text("Evening (4pm - 21pm)");
       case "Late Night":
-        return Text("Late Night (21pm - 12pm)");
+        return Text("Late Night (21pm - 12am)");
       case "Any":
         return Text("Any");
       default:
@@ -133,7 +133,7 @@ class _AddTasksPageState extends State<AddTasksPage> {
       taskName: _taskNameController.text.trim(),
       duration: double.tryParse(_durationController.text.trim()),
       allowSplitting: _allowSplitting,
-      maxChunkTime: double.tryParse(_durationController.text.trim()),
+      maxChunkTime: double.tryParse(_maxChunkTimeController.text.trim()),
       priority: _priority, // Set default priority
       deadlineType: _deadlineType,
       deadline: _deadline, // Set default deadline type

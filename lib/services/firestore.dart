@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_todo_app/model/daily_item.dart';
+import 'package:flutter_todo_app/model/schedules.dart';
 import 'package:flutter_todo_app/model/task.dart';
 import 'package:flutter_todo_app/model/event.dart';
 
@@ -14,22 +15,119 @@ class FireStoreService {
   final CollectionReference dailyItems =
       FirebaseFirestore.instance.collection("DailyItems");
 
-  Future<void> addTaskDetails(
-    Task task,
-  ) async {
-    await tasks.add({
+Future<void> addTaskDetails(Task task) async {
+  // Add the task to the "Tasks" collection
+  DocumentReference<Map<String, dynamic>> taskRef =
+      await FirebaseFirestore.instance.collection("Tasks").add({
+    "userId": task.userId,
+    "taskName": task.taskName,
+    "duration": task.duration,
+    "allowSplitting": task.allowSplitting,
+    "maxChunkTime": task.maxChunkTime,
+    "priority": task.priority,
+    "deadlineType": task.deadlineType,
+    "deadline": task.deadline,
+    "startDate": task.startDate,
+    "schedule": task.schedule,
+    "isDone": task.isDone,
+  });
+
+  // Get the schedule times (e.g., "Evening" -> [16, 21] for 4pm to 9pm)
+  List<int> scheduleTimes = schedules[task.schedule] ?? [16, 21];
+  int startHour = scheduleTimes[0]; // Start hour of the time slot (e.g., 4pm)
+  int endHour = scheduleTimes[1]; // End hour of the time slot (e.g., 9pm)
+
+  // Initialize variables for tracking the current date and remaining duration
+  DateTime currentDate = task.startDate!;
+  int remainingDuration = task.duration!.toInt(); // Total duration of the task in hours
+  int chunkTime = (task.maxChunkTime ?? remainingDuration).toInt(); // Max chunk time
+
+  // Loop to split the task into chunks (subtasks) if allowed
+  while (remainingDuration > 0) {
+    // Determine the duration of the current chunk (subtask)
+    int currentChunkTime =
+        (remainingDuration >= chunkTime) ? chunkTime : remainingDuration;
+
+    // Set the start and end times for the current chunk within the schedule
+    DateTime startDateTime = DateTime(
+      currentDate.year, currentDate.month, currentDate.day, startHour);
+    DateTime endDateTime = startDateTime.add(Duration(hours: currentChunkTime));
+
+    // Adjust the chunk to fit within the schedule's end time
+    if (endDateTime.hour > endHour) {
+      endDateTime = DateTime(
+        currentDate.year, currentDate.month, currentDate.day, endHour);
+      currentChunkTime = endDateTime.difference(startDateTime).inHours;
+    }
+
+    // Check for scheduling conflicts and find the next available slot if needed
+    DateTime nextAvailableStart = await _findNextAvailableTimeSlot(
+      task.userId,
+      startDateTime,
+      currentChunkTime, // Pass the chunk duration for conflict checking
+    );
+    startDateTime = nextAvailableStart;
+    endDateTime = startDateTime.add(Duration(hours: currentChunkTime));
+
+    // Add the subtask (daily item) to the "DailyItems" collection
+    await FirebaseFirestore.instance.collection("DailyItems").add({
       "userId": task.userId,
-      "taskName": task.taskName,
-      "duration": task.duration,
-      "allowSplitting": task.allowSplitting,
-      "maxChunkTime": task.maxChunkTime,
-      "priority": task.priority,
-      "deadlineType": task.deadlineType,
-      "deadline": task.deadline,
-      "startDate": task.startDate,
-      "schedule": task.schedule,
+      "itemName": task.taskName,
+      "isEvent": false, // It's a task, not an event
+      "startDateTime": startDateTime,
+      "endDateTime": endDateTime,
+      "duration": currentChunkTime,
+      "refId": taskRef.id, // Reference to the main task
     });
+
+    // Update the remaining duration and move to the next day for the next chunk
+    remainingDuration -= currentChunkTime;
+    currentDate = currentDate.add(Duration(days: 1)); // Move to the next day
   }
+}
+
+
+// Helper function to check for conflicts
+  Future<DocumentSnapshot?> _getConflictingDailyItem(
+      String userId, DateTime startDateTime, DateTime endDateTime) async {
+    var conflictQuery = dailyItems
+        .where('userId', isEqualTo: userId)
+        .where('startDateTime', isLessThan: endDateTime)
+        .where('endDateTime', isGreaterThan: startDateTime)
+        .limit(1); // We only need to know if any conflict exists
+
+    var conflictSnapshot = await conflictQuery.get();
+    if (conflictSnapshot.docs.isNotEmpty) {
+    return conflictSnapshot.docs.first;
+  } else {
+    return null;
+  }
+  }
+
+// Helper function to find the next available time slot in case of conflicts
+  Future<DateTime> _findNextAvailableTimeSlot(
+    String userId, DateTime startDateTime, int chunkDuration) async {
+  DateTime proposedStart = startDateTime;
+
+  while (true) {
+    DateTime proposedEnd = proposedStart.add(Duration(hours: chunkDuration));
+
+    // Check if this new proposed time slot conflicts with anything
+    DocumentSnapshot? conflict = await _getConflictingDailyItem(
+      userId,
+      proposedStart,
+      proposedEnd,
+    );
+
+    if (conflict == null) {
+      // If no conflict is found, return the proposed start time
+      return proposedStart;
+    } else {
+      // If there is a conflict, move the start time to after the conflicting event
+      proposedStart = (conflict['endDateTime'] as Timestamp).toDate();
+    }
+  }
+}
 
   Stream<QuerySnapshot> getTasksStream(userId) {
     final tasksStream = tasks
@@ -68,11 +166,17 @@ class FireStoreService {
 
   Future<void> deleteTask(String docId) async {
     await tasks.doc(docId).delete();
+    QuerySnapshot querySnapshot =
+        await dailyItems.where('refId', isEqualTo: docId).get();
+    for (QueryDocumentSnapshot doc in querySnapshot.docs) {
+      await doc.reference.delete();
+    }
   }
 
   List<DateTime> calculateNextOccurrences(
       List<int> selectedWeekdays, DateTime startTime) {
     List<DateTime> occurrences = [];
+
     for (int weekday in selectedWeekdays) {
       // Calculate the difference between the desired weekday and today
       int daysToAdd = weekday - DateTime.now().weekday;
@@ -80,15 +184,23 @@ class FireStoreService {
         daysToAdd +=
             7; // Handle cases where the desired day is in the past week
       }
-      // Calculate the next occurrence of the weekday
-      DateTime occurrence = DateTime.now().add(Duration(days: daysToAdd));
+
+      // Calculate the first occurrence of the weekday in the first week
+      DateTime firstOccurrence = DateTime.now().add(Duration(days: daysToAdd));
+
       // Check if the event start time has already passed today
       if (weekday == DateTime.now().weekday &&
           DateTime.now().hour >= startTime.hour) {
         // If the event time has passed, move to the next occurrence
-        occurrence = occurrence.add(const Duration(days: 7));
+        firstOccurrence = firstOccurrence.add(const Duration(days: 7));
       }
-      occurrences.add(occurrence);
+
+      // Add first occurrence
+      occurrences.add(firstOccurrence);
+
+      // Calculate and add the second occurrence (week after the first occurrence)
+      DateTime secondOccurrence = firstOccurrence.add(const Duration(days: 7));
+      occurrences.add(secondOccurrence);
     }
     return occurrences;
   }
