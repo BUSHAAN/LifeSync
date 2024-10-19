@@ -23,6 +23,47 @@ class _SchedulingSectionState extends State<SchedulingSection> {
   final user = FirebaseAuth.instance.currentUser;
   FireStoreService fireStoreService = FireStoreService();
 
+  Future<void> showCompletionOrRescheduleDialog(
+      Map<String, dynamic> dailyItem) async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Task Expired"),
+          content: Text(
+            "Task '${dailyItem['itemName']}' has expired. Would you like to mark it as completed or reschedule?",
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                // Mark the task as completed
+                setState(() {
+                  dailyItem['isCompleted'] = true;
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text("Mark as Completed"),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Reschedule the task
+                await _rescheduleTask(dailyItem);
+                Navigator.of(context).pop();
+              },
+              child: Text("Reschedule"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _rescheduleTask(Map<String, dynamic> dailyItem) {
+  // Logic to reschedule the task using your existing scheduling method
+  // Call your scheduling algorithm here, using the relevant data from the dailyItem
+  // _rescheduleExpiredTask(dailyItem); <-- Call the method you already created.
+}
+
   void calendarTapped(CalendarTapDetails calendarTapDetails) {
     if (_controller.view == CalendarView.month &&
         calendarTapDetails.targetElement == CalendarElement.calendarCell) {
