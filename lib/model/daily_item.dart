@@ -8,7 +8,8 @@ class DailyItem {
       required this.background,
       required this.isAllDay,
       required this.isEvent,
-      required this.userId});
+      required this.userId,
+      this.isCompleted});
 
   String itemName;
   String userId;
@@ -17,4 +18,5 @@ class DailyItem {
   Color background;
   bool isAllDay;
   bool isEvent;
+  bool? isCompleted;
 }

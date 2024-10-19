@@ -1,7 +1,9 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_todo_app/pages/task_progress.dart';
 import 'package:flutter_todo_app/services/firestore.dart';
 
 class TaskDetails extends StatefulWidget {
@@ -16,10 +18,10 @@ class TaskDetails extends StatefulWidget {
 }
 
 class _TaskDetailsState extends State<TaskDetails> {
+  final String _userId = FirebaseAuth.instance.currentUser!.uid;
   final FireStoreService fireStoreService = FireStoreService();
   DateTime? _deadline;
   DateTime? _startDate;
-  final List<String> _priorities = ["high", "medium", "low"];
   final List<String> _deadlineTypes = [
     "hard deadline",
     "soft deadline",
@@ -108,6 +110,22 @@ class _TaskDetailsState extends State<TaskDetails> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Task Details"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.done_outline_sharp),
+            onPressed:  () async {
+                                final dailyItems =
+                                    await fireStoreService.getDailyItemsForTask(widget.documentId,_userId);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TaskProgress(
+                                        taskName: widget.taskData['taskName'], dailyItems: dailyItems),
+                                  ),
+                                );
+                              }
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20.0),
@@ -174,18 +192,6 @@ class _TaskDetailsState extends State<TaskDetails> {
                 ],
               ),
             ),
-            // Priority Dropdown
-            DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: "Priority"),
-                value: widget.taskData["priority"],
-                items: _priorities
-                    .map((priority) => DropdownMenuItem<String>(
-                          value: priority,
-                          child: Text(priority),
-                        ))
-                    .toList(),
-                onChanged: (value) =>
-                    setState(() => widget.taskData["priority"] = value!)),
             // Deadline Type Dropdown
             DropdownButtonFormField<String>(
                 decoration: InputDecoration(labelText: "Deadline Type"),

@@ -2,15 +2,12 @@
 
 // enum Deadline { hardDeadline, softDeadline, noDeadline }
 
-// enum Priority { high, medium, low }
-
 class Task {
   String userId;
   String taskName;
   double? duration; // Assuming hours
   bool allowSplitting;
   double? maxChunkTime; // Assuming hours
-  String priority; // Default priority
   String deadlineType; // Default deadline type
   DateTime? deadline;
   DateTime? startDate;
@@ -23,7 +20,6 @@ class Task {
     required this.duration, // Assuming hours
     required this.allowSplitting,
     this.maxChunkTime, // Assuming hours
-    required this.priority, // Default priority
     required this.deadlineType, // Default deadline type
     this.deadline,
     required this.startDate,
@@ -38,7 +34,6 @@ class Task {
           taskName: 'Morning Excercise',
           duration: 1,
           allowSplitting: false,
-          priority: "medium",
           deadlineType: "noDeadline",
           startDate: DateTime(2024),
           schedule: "mornings",

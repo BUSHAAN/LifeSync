@@ -19,7 +19,6 @@ class _AddTasksPageState extends State<AddTasksPage> {
   final _durationController = TextEditingController();
   bool _allowSplitting = false;
   final _maxChunkTimeController = TextEditingController();
-  String _priority = "";
   String _deadlineType = "";
   DateTime? _deadline;
   DateTime? _startDate;
@@ -134,7 +133,6 @@ class _AddTasksPageState extends State<AddTasksPage> {
       duration: double.tryParse(_durationController.text.trim()),
       allowSplitting: _allowSplitting,
       maxChunkTime: double.tryParse(_maxChunkTimeController.text.trim()),
-      priority: _priority, // Set default priority
       deadlineType: _deadlineType,
       deadline: _deadline, // Set default deadline type
       startDate: _startDate,
@@ -208,16 +206,6 @@ class _AddTasksPageState extends State<AddTasksPage> {
                     ],
                   ),
                 ),
-                // Priority Dropdown
-                DropdownButtonFormField<String>(
-                    decoration: InputDecoration(labelText: "Priority"),
-                    items: _priorities
-                        .map((priority) => DropdownMenuItem<String>(
-                              value: priority,
-                              child: Text(priority),
-                            ))
-                        .toList(),
-                    onChanged: (value) => setState(() => _priority = value!)),
                 // Deadline Type Dropdown
                 DropdownButtonFormField<String>(
                     decoration: InputDecoration(labelText: "Deadline Type"),

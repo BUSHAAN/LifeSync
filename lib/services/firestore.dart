@@ -24,7 +24,6 @@ class FireStoreService {
       "duration": task.duration,
       "allowSplitting": task.allowSplitting,
       "maxChunkTime": task.maxChunkTime,
-      "priority": task.priority,
       "deadlineType": task.deadlineType,
       "deadline": task.deadline,
       "startDate": task.startDate,
@@ -80,7 +79,8 @@ class FireStoreService {
         "startDateTime": startDateTime,
         "endDateTime": endDateTime,
         "duration": currentChunkTime,
-        "refId": taskRef.id, // Reference to the main task
+        "refId": taskRef.id,
+        "isCompleted": false // Reference to the main task
       });
 
       // Update the remaining duration and move to the next day for the next chunk
@@ -157,7 +157,6 @@ class FireStoreService {
       'duration': updatedTask['duration'],
       'allowSplitting': updatedTask['allowSplitting'],
       'maxChunkTime': updatedTask['maxChunkTime'],
-      'priority': updatedTask['priority'],
       'deadlineType': updatedTask['deadlineType'],
       'deadline': updatedTask['deadline'], // Convert to ISO 8601 format
       'startDate': updatedTask['startDate'], // Convert to ISO 8601 format
@@ -273,6 +272,7 @@ class FireStoreService {
               ? 0
               : event.endTime!.difference(event.startTime!).inHours,
           "refId": docRef.id,
+          "isCompleted": false,
         });
       } else {
         // If conflicts couldn't be resolved, return with conflict details
@@ -636,6 +636,7 @@ class FireStoreService {
           "startDateTime": startDateTime,
           "userId": updatedEvent.userId,
           "refId": docId,
+          "isCompleted": false,
         });
       }
     } else {
@@ -711,4 +712,18 @@ class FireStoreService {
       'userId': updatedDailyItem['userId'],
     });
   }
+
+  Future<List<DocumentSnapshot>> getDailyItemsForTask(
+      String taskId, String userId) async {
+    final querySnapshot = await dailyItems
+        .where('userId', isEqualTo: userId)
+        .where('refId', isEqualTo: taskId)
+        .where('isEvent', isEqualTo: false)
+        .get();
+
+    // Return a list of documents related to the task
+    return querySnapshot.docs;
+  }
+
+
 }

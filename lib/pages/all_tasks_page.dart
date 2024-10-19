@@ -3,8 +3,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_todo_app/model/daily_item.dart';
 import 'package:flutter_todo_app/pages/add_task.dart';
 import 'package:flutter_todo_app/pages/task_details.dart';
+import 'package:flutter_todo_app/pages/task_progress.dart';
 import 'package:flutter_todo_app/services/firestore.dart';
 
 class AllTasksPage extends StatefulWidget {
@@ -71,6 +73,19 @@ class _AllTasksPageState extends State<AllTasksPage> {
                       trailing: Wrap(
                         spacing: 1,
                         children: [
+                          IconButton(
+                              onPressed: () async {
+                                final dailyItems =
+                                    await fireStoreService.getDailyItemsForTask(docId,user!.uid);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TaskProgress(
+                                        taskName: taskTitle, dailyItems: dailyItems),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.done_outline_sharp)),
                           IconButton(
                               onPressed: () async {
                                 final taskData =
