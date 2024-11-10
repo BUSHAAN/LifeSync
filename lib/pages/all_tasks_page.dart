@@ -85,7 +85,7 @@ class _AllTasksPageState extends State<AllTasksPage> {
                                   ),
                                 );
                               },
-                              icon: const Icon(Icons.done_outline_sharp)),
+                              icon: const Icon(Icons.assignment_turned_in_rounded)),
                           IconButton(
                               onPressed: () async {
                                 final taskData =

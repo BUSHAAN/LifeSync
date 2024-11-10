@@ -25,8 +25,6 @@ class _TaskProgressState extends State<TaskProgress> {
     _initializeDailyItems();
   }
 
-
-
   // Method to initialize dailyItems and count completed subtasks
   void _initializeDailyItems() {
     // Convert the dailyItems to a modifiable list of maps
@@ -73,7 +71,11 @@ class _TaskProgressState extends State<TaskProgress> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Task Progress: ${widget.taskName}"),
+        backgroundColor: Colors.blue.shade600,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text("Task Progress: ${widget.taskName}",style: TextStyle(
+          color: Colors.white,
+        ),),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -106,36 +108,39 @@ class _TaskProgressState extends State<TaskProgress> {
                   var item = modifiedDailyItems[index];
                   bool isCompleted = item['isCompleted'];
 
-                  return ListTile(
-                    title: Text(
-                      "${item['itemName']}",
-                      style: TextStyle(
-                        decoration: isCompleted
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
+                  return Card(
+                    
+                    child: ListTile(
+                      title: Text(
+                        "${item['itemName']}: subtask: ${index + 1}",
+                        style: TextStyle(
+                          decoration: isCompleted
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
                       ),
-                    ),
-                    subtitle: Text(
-                        "${item['startDateTime'].toString().substring(0, 16)} - ${item['endDateTime'].toString().substring(0, 16)}"),
-                    trailing: Checkbox(
-                      value: isCompleted,
-                      onChanged: (bool? value) {
-                        DateTime now = DateTime.now();
-                        DateTime taskEndTime = item['endDateTime'];
-
-                        if (taskEndTime.isAfter(now)) {
-                          setState(() {
-                            modifiedDailyItems[index]['isCompleted'] = value!;
-                            _calculateCompletedSubtasks(); // Update progress in real time
-                          });
-                        } else if (!isCompleted) {
-                          // If the task is expired and not yet completed, allow checking it
-                          setState(() {
-                            modifiedDailyItems[index]['isCompleted'] = value!;
-                            _calculateCompletedSubtasks(); // Update progress in real time
-                          });
-                        }
-                      },
+                      subtitle: Text(
+                          "${item['startDateTime'].toString().substring(0, 16)} - ${item['endDateTime'].toString().substring(11, 16)}"),
+                      trailing: Checkbox(
+                        value: isCompleted,
+                        onChanged: (bool? value) {
+                          DateTime now = DateTime.now();
+                          DateTime taskEndTime = item['endDateTime'];
+                    
+                          if (taskEndTime.isAfter(now)) {
+                            setState(() {
+                              modifiedDailyItems[index]['isCompleted'] = value!;
+                              _calculateCompletedSubtasks(); // Update progress in real time
+                            });
+                          } else if (!isCompleted) {
+                            // If the task is expired and not yet completed, allow checking it
+                            setState(() {
+                              modifiedDailyItems[index]['isCompleted'] = value!;
+                              _calculateCompletedSubtasks(); // Update progress in real time
+                            });
+                          }
+                        },
+                      ),
                     ),
                   );
                 },

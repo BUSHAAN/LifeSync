@@ -144,27 +144,28 @@ class MLServices {
   }
 
   Future<String?> checkForFreeSlotAndPredict() async {
-    final userId = FirebaseAuth.instance.currentUser!.uid;
-    final isFree = await isCurrentTaskOrFreeSlot(userId);
-    if (isFree) {
-      print('You have a free slot in the next 4 hours');
-      final tasks = await fetchLastTasks(userId, 2);
-      final prediction = await sendTaskDataToApi(tasks);
-      //print("prediction: $prediction");
-      if (prediction != null) {
-        AwesomeNotifications().createNotification(
-          content: NotificationContent(
-            id: 10,
-            channelKey: 'life_sync',
-            title: 'New Prediction',
-            body: 'You have a new prediction. Click to view',
-          ),
-        );
-      }
-      return prediction; // Return the prediction
-    } else {
-      print('You have a task scheduled right now');
-      return ('You have a task scheduled right now');
-    }
+    // final userId = FirebaseAuth.instance.currentUser!.uid;
+    // final isFree = await isCurrentTaskOrFreeSlot(userId);
+    // if (isFree) {
+    //   print('You have a free slot in the next 4 hours');
+    //   final tasks = await fetchLastTasks(userId, 2);
+    //   final prediction = await sendTaskDataToApi(tasks);
+    //   //print("prediction: $prediction");
+    //   if (prediction != null) {
+    //     AwesomeNotifications().createNotification(
+    //       content: NotificationContent(
+    //         id: 10,
+    //         channelKey: 'life_sync',
+    //         title: 'New Prediction',
+    //         body: 'You have a new prediction. Click to view',
+    //       ),
+    //     );
+    //   }
+    //   return prediction; // Return the prediction
+    // } else {
+    //   print('You have a task scheduled right now');
+    //   return ('You have a task scheduled right now');
+    // }
+    return("Go for a walk");
   }
 }

@@ -6,6 +6,7 @@ import 'package:flutter_todo_app/model/daily_item.dart';
 import 'package:flutter_todo_app/model/schedules.dart';
 import 'package:flutter_todo_app/model/task.dart';
 import 'package:flutter_todo_app/model/event.dart';
+import 'package:flutter_todo_app/pages/scheduling_section.dart';
 
 class FireStoreService {
   final CollectionReference tasks =
@@ -130,6 +131,7 @@ class FireStoreService {
       }
     }
   }
+
 
   Stream<QuerySnapshot> getTasksStream(userId) {
     final tasksStream = tasks
@@ -702,7 +704,7 @@ class FireStoreService {
 
   Future<void> updateDailyItem(
       String docId, Map<String, dynamic> updatedDailyItem) async {
-    await events.doc(docId).update({
+    await dailyItems.doc(docId).update({
       'duration': updatedDailyItem['duration'],
       'endDateTime': updatedDailyItem['endDateTime'],
       'isEvent': updatedDailyItem['isEvent'],
@@ -710,6 +712,7 @@ class FireStoreService {
       'startDateTime': updatedDailyItem['startDateTime'],
       'refId': updatedDailyItem['refId'],
       'userId': updatedDailyItem['userId'],
+      'isCompleted': updatedDailyItem['isCompleted'],
     });
   }
 
@@ -725,5 +728,25 @@ class FireStoreService {
     return querySnapshot.docs;
   }
 
+  void checkAndHandleExpiredTasks(BuildContext context, String userId) async {
+    print("Checking for expired tasks...");
+    DateTime now = DateTime.now();
 
+    // Query Firestore for tasks where endDateTime is before now and isCompleted is false
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('DailyItems')
+        .where('endDateTime', isLessThan: now)
+        .where('isCompleted', isEqualTo: false)
+        .get();
+
+    List<DocumentSnapshot> documents = querySnapshot.docs;
+
+    for (var doc in documents) {
+      Map<String, dynamic> dailyItem = doc.data() as Map<String, dynamic>;
+
+      // Call method to handle the expired task
+      await SchedulingSection()
+          .showCompletionOrRescheduleDialog(context, dailyItem, doc.id, userId);
+    }
+  }
 }

@@ -49,7 +49,7 @@ class _HomePageState extends State<HomePage> {
           ),
           actions: [
             IconButton(
-                icon: Icon(Icons.insights), // Use an appropriate icon
+                icon: Icon(Icons.lightbulb_outline), // Use an appropriate icon
                 onPressed: () {
                   // Navigate to the prediction page
                   Navigator.push(

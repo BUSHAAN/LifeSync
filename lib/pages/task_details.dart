@@ -112,7 +112,7 @@ class _TaskDetailsState extends State<TaskDetails> {
         title: Text("Task Details"),
         actions: [
           IconButton(
-            icon: Icon(Icons.done_outline_sharp),
+            icon: Icon(Icons.assignment_turned_in_rounded),
             onPressed:  () async {
                                 final dailyItems =
                                     await fireStoreService.getDailyItemsForTask(widget.documentId,_userId);

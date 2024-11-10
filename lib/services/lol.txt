@@ -1,0 +1,163 @@
+
+
+
+Function addEventDetails(Event):
+    // Prepare a list of event occurrences based on frequency
+    If event frequency is "One-Time":
+        Set occurrences to the start date and time of the event
+    Else if event frequency is "Weekly":
+        Set occurrences to the next dates for the selected weekdays
+    Else if event frequency is "Daily":
+        Set occurrences to the next 7 days
+    Else:
+        Throw "Invalid event frequency" error
+
+    // Check for conflicts with other events
+    conflictResult = CheckForConflicts(event)
+    If conflictResult is not null:
+        Return {'hasConflict': true, 'blockingEvent': conflictResult}
+
+    // No conflict found, add the event to the collection
+    Add event to "Events" collection and get the document reference
+
+    // For each occurrence, calculate start and end times
+    For each occurrence in occurrences:
+        Calculate startDateTime and endDateTime based on occurrence
+
+        // Check and resolve conflicts with existing daily items
+        conflictResolved = HandleDailyItemConflicts(event, startDateTime, endDateTime)
+        If conflictResolved:
+            // Add the daily item for this occurrence
+            Add daily item with event details to "DailyItems" collection
+        Else:
+            // Conflict found, return conflict details
+            Return {'hasConflict': true, 'blockingEvent': {startDateTime, endDateTime}}
+
+    Return null  // Event added successfully, no conflicts
+
+
+Function CheckForConflicts(newEvent, excludeEventId=None):
+    Function getConflictingEvent(query):
+        Execute the query
+        For each document in the query result:
+            If excludeEventId is null OR document ID is not equal to excludeEventId:
+                Return the conflicting document
+        Return null
+    If newEvent frequency is "One-Time":
+        // Check conflicts with daily events
+        dailyConflictsQuery = Query for daily events with overlapping times
+        dailyConflict = getConflictingEvent(dailyConflictsQuery)
+        If dailyConflict is not null, return dailyConflict
+
+        // Check conflicts with weekly events on the same weekday
+        eventWeekday = weekday of newEvent startDate
+        weeklyConflictsQuery = Query for weekly events with overlapping times
+        weeklyConflict = getConflictingEvent(weeklyConflictsQuery)
+        If weeklyConflict is not null, return weeklyConflict
+
+        // Check conflicts with other one-time events on the same date
+        oneTimeConflictsQuery = Query for one-time events on the same date
+        oneTimeConflict = getConflictingEvent(oneTimeConflictsQuery)
+        If oneTimeConflict is not null, return oneTimeConflict
+
+    If newEvent frequency is "Weekly":
+        // Check conflicts with daily events
+        dailyConflictsQuery = Query for daily events with overlapping times
+        dailyConflict = getConflictingEvent(dailyConflictsQuery)
+        If dailyConflict is not null, return dailyConflict
+
+        // Check conflicts with weekly events on selected weekdays
+        For each weekday in newEvent selectedWeekdays:
+            weeklyConflictsQuery = Query for weekly events with overlapping times
+            weeklyConflict = getConflictingEvent(weeklyConflictsQuery)
+            If weeklyConflict is not null, return weeklyConflict
+
+        // Check conflicts with one-time events
+        oneTimeConflictsQuery = Query for one-time events with overlapping times
+        oneTimeConflict = getConflictingEvent(oneTimeConflictsQuery)
+        If oneTimeConflict is not null AND weekday of one-time event matches:
+            Return oneTimeConflict
+
+    If newEvent frequency is "Daily":
+        // Check conflicts with any existing events
+        conflictsQuery = Query for events with overlapping times
+        conflict = getConflictingEvent(conflictsQuery)
+        If conflict is not null, return conflict
+
+    Return null  // No conflict found
+
+
+Function addTaskDetails(task):
+    taskRef = Add task to "Tasks" collection with:
+        - add the attributes to the database
+
+    scheduleTimes = Get schedule time range for task.schedule
+    startHour = scheduleTimes[0]
+    endHour = scheduleTimes[1]
+
+    currentDate = task.startDate
+    remainingDuration = task.duration
+    chunkTime = If task.maxChunkTime is not null, then task.maxChunkTime else remainingDuration
+
+    While remainingDuration > 0:
+        currentChunkTime = Min(chunkTime, remainingDuration)
+        startDateTime = Set startDateTime
+        
+        endDateTime = startDateTime + currentChunkTime hours
+
+        If endDateTime.hour > endHour:
+            endDateTime = Set endDateTime to:
+                - year: currentDate.year
+                - month: currentDate.month
+                - day: currentDate.day
+                - hour: endHour
+            currentChunkTime = Calculate hours between startDateTime and endDateTime
+
+        nextAvailableStart = Call _findNextAvailableTimeSlot with:
+            - userId: task.userId
+            - startDateTime: startDateTime
+            - currentChunkTime: currentChunkTime
+
+        startDateTime = nextAvailableStart
+        endDateTime = startDateTime + currentChunkTime hours
+
+        Add subtask to "DailyItems" collection with:
+            - add the attributes to the database
+
+        remainingDuration -= currentChunkTime
+        currentDate = currentDate + 1 day
+
+
+
+Function _getConflictingDailyItem(userId, startDateTime, endDateTime):
+    conflictQuery = Query "DailyItems" where:
+        - userId equals userId
+        - startDateTime is less than endDateTime
+        - endDateTime is greater than startDateTime
+        - Limit result to 1
+
+    conflictSnapshot = Execute conflictQuery
+
+    If conflictSnapshot is not empty:
+        Return first document from conflictSnapshot
+
+    Return null
+
+
+Function _findNextAvailableTimeSlot(userId, startDateTime, chunkDuration):
+    proposedStart = startDateTime
+
+    While True:
+        proposedEnd = proposedStart + chunkDuration hours
+
+        conflict = Call _getConflictingDailyItem with:
+            - userId: userId
+            - startDateTime: proposedStart
+            - endDateTime: proposedEnd
+
+        If conflict is null:
+            Return proposedStart
+        
+        proposedStart = conflict.endDateTime
+
+

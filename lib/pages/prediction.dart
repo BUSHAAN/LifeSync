@@ -14,13 +14,11 @@ class PredictionPage extends StatefulWidget {
 }
 
 class _PredictionPageState extends State<PredictionPage> {
-  final String _userId = FirebaseAuth.instance.currentUser!.uid;
   final MLServices mlServices = MLServices();
   String? predictionText = "";
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     mlServices.checkForFreeSlotAndPredict().then((prediction) {
       if (prediction != null) {
@@ -35,7 +33,9 @@ class _PredictionPageState extends State<PredictionPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Prediction Page'),
+        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.blue[600],
+        title: const Text('Prediction Page',style:TextStyle(color:Colors.white)),
       ),
       body: Center(
         child: Column(
@@ -72,7 +72,7 @@ class _PredictionPageState extends State<PredictionPage> {
         onPressed: () {
           mlServices.checkForFreeSlotAndPredict();
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.refresh),
       ),
     );
   }

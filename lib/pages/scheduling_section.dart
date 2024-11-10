@@ -10,6 +10,7 @@ import 'package:flutter_todo_app/model/meeting.dart';
 import 'package:flutter_todo_app/pages/event_details.dart';
 import 'package:flutter_todo_app/pages/task_details.dart';
 import 'package:flutter_todo_app/services/firestore.dart';
+import 'package:flutter_todo_app/services/rescheduleTasksAtStartup.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class SchedulingSection extends StatefulWidget {
@@ -17,14 +18,10 @@ class SchedulingSection extends StatefulWidget {
 
   @override
   State<SchedulingSection> createState() => _SchedulingSectionState();
-}
 
-class _SchedulingSectionState extends State<SchedulingSection> {
-  final user = FirebaseAuth.instance.currentUser;
-  FireStoreService fireStoreService = FireStoreService();
-
-  Future<void> showCompletionOrRescheduleDialog(
-      Map<String, dynamic> dailyItem) async {
+  Future<void> showCompletionOrRescheduleDialog(BuildContext context,
+      Map<String, dynamic> dailyItem, String docId,String userId) async {
+        Rescheduletasksatstartup rescheduletasksatstartup = Rescheduletasksatstartup();
     return showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -35,20 +32,17 @@ class _SchedulingSectionState extends State<SchedulingSection> {
           ),
           actions: <Widget>[
             TextButton(
-              onPressed: () {
-                // Mark the task as completed
-                setState(() {
-                  dailyItem['isCompleted'] = true;
-                });
-                Navigator.of(context).pop();
+              onPressed: () async {
+                dailyItem['isCompleted'] = true;
+                await FireStoreService().updateDailyItem(docId, dailyItem);
+                Navigator.pop(context);
               },
               child: Text("Mark as Completed"),
             ),
             TextButton(
               onPressed: () async {
-                // Reschedule the task
-                await _rescheduleTask(dailyItem);
-                Navigator.of(context).pop();
+                await rescheduletasksatstartup.rescheduleDailyItem(docId);
+                Navigator.pop(context);
               },
               child: Text("Reschedule"),
             ),
@@ -57,12 +51,18 @@ class _SchedulingSectionState extends State<SchedulingSection> {
       },
     );
   }
-
-  void _rescheduleTask(Map<String, dynamic> dailyItem) {
-  // Logic to reschedule the task using your existing scheduling method
-  // Call your scheduling algorithm here, using the relevant data from the dailyItem
-  // _rescheduleExpiredTask(dailyItem); <-- Call the method you already created.
 }
+
+class _SchedulingSectionState extends State<SchedulingSection> {
+  final user = FirebaseAuth.instance.currentUser;
+  FireStoreService fireStoreService = FireStoreService();
+
+  @override
+  void initState() {
+    super.initState();
+    fireStoreService.checkAndHandleExpiredTasks(context,user!.uid);
+  }
+
 
   void calendarTapped(CalendarTapDetails calendarTapDetails) {
     if (_controller.view == CalendarView.month &&
@@ -137,7 +137,7 @@ class _SchedulingSectionState extends State<SchedulingSection> {
                     navigationDirection: MonthNavigationDirection.horizontal,
                   ),
                   showTodayButton: true,
-                  minDate: DateTime.now(),
+                  minDate: DateTime.parse('2021-07-20 20:18:04Z'),//DateTime.now(),
                   firstDayOfWeek: 1,
                   appointmentBuilder: (context, details) {
                     final Meeting meeting = details.appointments.first;
