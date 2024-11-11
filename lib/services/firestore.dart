@@ -16,8 +16,16 @@ class FireStoreService {
   final CollectionReference dailyItems =
       FirebaseFirestore.instance.collection("DailyItems");
 
-  Future<void> addTaskDetails(Task task) async {
-    // Add the task to the "Tasks" collection
+  Future<bool> addTaskDetails(Task task, BuildContext context) async {
+    // Step 1: Pre-check if the task duration can fit within its deadline
+    bool canFitWithinDeadline = await _canFitWithinDeadline(task);
+
+    if (!canFitWithinDeadline) {
+      await _showDeadlineConflictDialog(context, task.taskName, task.deadline!);
+      return false; // Task cannot fit within deadline; keep page open
+    }
+
+    // Step 2: Add the task to Firestore as the user has resolved the conflict or there was no conflict
     DocumentReference<Map<String, dynamic>> taskRef =
         await FirebaseFirestore.instance.collection("Tasks").add({
       "userId": task.userId,
@@ -32,62 +40,136 @@ class FireStoreService {
       "isDone": task.isDone,
     });
 
-    // Get the schedule times (e.g., "Evening" -> [16, 21] for 4pm to 9pm)
+    // Step 3: Define schedule times and variables for task chunking
     List<int> scheduleTimes = schedules[task.schedule] ?? [16, 21];
-    int startHour = scheduleTimes[0]; // Start hour of the time slot (e.g., 4pm)
-    int endHour = scheduleTimes[1]; // End hour of the time slot (e.g., 9pm)
-
-    // Initialize variables for tracking the current date and remaining duration
+    int startHour = scheduleTimes[0];
+    int endHour = scheduleTimes[1];
     DateTime currentDate = task.startDate!;
-    int remainingDuration =
-        task.duration!.toInt(); // Total duration of the task in hours
-    int chunkTime =
-        (task.maxChunkTime ?? remainingDuration).toInt(); // Max chunk time
+    int remainingDuration = task.duration!.toInt();
+    int chunkTime = (task.maxChunkTime ?? remainingDuration).toInt();
 
-    // Loop to split the task into chunks (subtasks) if allowed
+    // Adjust currentDate if starting today but outside schedule's time slot
+    DateTime now = DateTime.now();
+    if (currentDate.day == now.day &&
+        currentDate.month == now.month &&
+        currentDate.year == now.year &&
+        now.hour > endHour) {
+      currentDate = currentDate.add(Duration(days: 1)); // Move to next day
+    }
+
+    // Step 4: Loop to split the task into chunks (subtasks) and add as DailyItems
     while (remainingDuration > 0) {
-      // Determine the duration of the current chunk (subtask)
+      // Determine duration of current chunk (subtask)
       int currentChunkTime =
           (remainingDuration >= chunkTime) ? chunkTime : remainingDuration;
 
-      // Set the start and end times for the current chunk within the schedule
+      // Define start and end times for the current chunk within the schedule
       DateTime startDateTime = DateTime(
           currentDate.year, currentDate.month, currentDate.day, startHour);
       DateTime endDateTime =
           startDateTime.add(Duration(hours: currentChunkTime));
 
-      // Adjust the chunk to fit within the schedule's end time
+      // Adjust end time if it exceeds the schedule's end hour
       if (endDateTime.hour > endHour) {
         endDateTime = DateTime(
             currentDate.year, currentDate.month, currentDate.day, endHour);
         currentChunkTime = endDateTime.difference(startDateTime).inHours;
       }
 
-      // Check for scheduling conflicts and find the next available slot if needed
+      // Find next available slot if there's a scheduling conflict
       DateTime nextAvailableStart = await _findNextAvailableTimeSlot(
-        task.userId,
-        startDateTime,
-        currentChunkTime, // Pass the chunk duration for conflict checking
-      );
+          task.userId, startDateTime, currentChunkTime);
       startDateTime = nextAvailableStart;
       endDateTime = startDateTime.add(Duration(hours: currentChunkTime));
 
-      // Add the subtask (daily item) to the "DailyItems" collection
+      // Add subtask (DailyItem) to Firestore
       await FirebaseFirestore.instance.collection("DailyItems").add({
         "userId": task.userId,
         "itemName": task.taskName,
-        "isEvent": false, // It's a task, not an event
+        "isEvent": false,
         "startDateTime": startDateTime,
         "endDateTime": endDateTime,
         "duration": currentChunkTime,
         "refId": taskRef.id,
-        "isCompleted": false // Reference to the main task
+        "isCompleted": false,
       });
 
-      // Update the remaining duration and move to the next day for the next chunk
+      // Update remaining duration and move to the next day for next chunk
       remainingDuration -= currentChunkTime;
-      currentDate = currentDate.add(Duration(days: 1)); // Move to the next day
+      currentDate = currentDate.add(Duration(days: 1));
     }
+    return true; // Task added successfully; close paged
+  }
+
+// Helper function to pre-check if the task duration can fit within the deadline
+  Future<bool> _canFitWithinDeadline(Task task) async {
+    if (task.deadlineType == "no deadline") {
+      return true;
+    }
+    List<int> scheduleTimes = schedules[task.schedule] ?? [16, 21];
+    int startHour = scheduleTimes[0];
+    int endHour = scheduleTimes[1];
+    DateTime currentDate = task.startDate!;
+    int remainingDuration = task.duration!.toInt();
+    int chunkTime = (task.maxChunkTime ?? remainingDuration).toInt();
+
+    while (remainingDuration > 0) {
+      int currentChunkTime =
+          (remainingDuration >= chunkTime) ? chunkTime : remainingDuration;
+      DateTime startDateTime = DateTime(
+          currentDate.year, currentDate.month, currentDate.day, startHour);
+      DateTime endDateTime =
+          startDateTime.add(Duration(hours: currentChunkTime));
+
+      // Check if startDateTime or endDateTime exceeds the deadline
+      if (task.deadline != null && startDateTime.isAfter(task.deadline!)) {
+        return false; // Task cannot fit within the deadline
+      }
+
+      // Adjust end time to fit within schedule's end hour
+      if (endDateTime.hour > endHour) {
+        endDateTime = DateTime(
+            currentDate.year, currentDate.month, currentDate.day, endHour);
+        currentChunkTime = endDateTime.difference(startDateTime).inHours;
+      }
+
+      // Update remaining duration and move to the next day
+      remainingDuration -= currentChunkTime;
+      currentDate = currentDate.add(Duration(days: 1));
+    }
+    return true;
+  }
+
+// Helper function to show a conflict dialog with options
+  Future<bool> _showDeadlineConflictDialog(
+      BuildContext context, String taskName, DateTime deadline) async {
+    return await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Deadline Conflict"),
+          content: Text(
+              "The task \"$taskName\" cannot be scheduled within its deadline on ${deadline.toLocal()}. "
+              "Would you like to edit the deadline or reschedule?"),
+          actions: [
+            TextButton(
+              child: Text("Edit Deadline"),
+              onPressed: () {
+                Navigator.of(context)
+                    .pop(false); // Return false to allow editing
+              },
+            ),
+            TextButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context)
+                    .pop(false); // Return false, cancel adding task
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
 // Helper function to check for conflicts
@@ -131,7 +213,6 @@ class FireStoreService {
       }
     }
   }
-
 
   Stream<QuerySnapshot> getTasksStream(userId) {
     final tasksStream = tasks
@@ -250,7 +331,6 @@ class FireStoreService {
       "selectedWeekdays": event.selectedWeekdays,
       "startDate": event.startDate,
     });
-
     // Add corresponding daily items for each occurrence
     for (DateTime occurrence in occurrences) {
       DateTime startDateTime = DateTime(occurrence.year, occurrence.month,
@@ -260,7 +340,7 @@ class FireStoreService {
 
       // Check for conflicts with other DailyItems for this occurrence
       bool conflictResolved = await _handleDailyItemConflictsAndReschedule(
-          event.userId, startDateTime, endDateTime, event.eventName);
+          event.userId, startDateTime, endDateTime, event.eventName, docRef.id);
 
       if (conflictResolved) {
         // No conflicts or conflicts resolved – Add the DailyItem
@@ -293,7 +373,7 @@ class FireStoreService {
   }
 
   Future<bool> _handleDailyItemConflictsAndReschedule(String userId,
-      DateTime startDateTime, DateTime endDateTime, String eventName) async {
+      DateTime startDateTime, DateTime endDateTime, String eventName, String eventId) async {
     // Query daily items that might conflict with this occurrence
     var taskQuery = dailyItems
         .where('userId', isEqualTo: userId)
@@ -316,18 +396,19 @@ class FireStoreService {
       int taskDuration = taskEnd.hour - taskStart.hour; // Task duration
 
       // Reschedule the conflicting task (implement your rescheduling logic)
-      await _rescheduleTask(taskDoc.id, endDateTime, userId, taskDuration);
+      await _rescheduleTask(taskDoc, endDateTime, userId, taskDuration,eventId);
     }
 
     // After rescheduling, return true
     return true;
   }
 
-  Future<void> _rescheduleTask(
-      String dailyItemId, // ID of the task to reschedule
+  Future<bool> _rescheduleTask(
+      QueryDocumentSnapshot<Object?> dailyItem, // ID of the task to reschedule
       DateTime eventEndTime, // End time of the new event
       String userId, // User ID for querying tasks
-      int taskDurationInHours // Duration of the task to be rescheduled
+      int taskDurationInHours, // Duration of the task to be rescheduled
+      String eventId
       ) async {
     DateTime proposedStart = eventEndTime;
     DateTime proposedEnd =
@@ -338,19 +419,30 @@ class FireStoreService {
       DocumentSnapshot? conflictingItem = await _getConflictingTask(
           userId, proposedStart, proposedEnd,
           excludeTaskId:
-              dailyItemId // Exclude the task itself from conflict check
+              dailyItem.id // Exclude the task itself from conflict check
           );
 
       if (conflictingItem == null) {
+        final taskSnapshot = await tasks.doc(dailyItem['refId']).get();
+        Map<String, dynamic> taskData =
+            taskSnapshot.data() as Map<String, dynamic>;
+        if (taskData['deadline'] != null) {
+          var deadline = (taskData['deadline'] as Timestamp).toDate();
+          if (proposedEnd.isAfter(deadline)) {
+            deleteEvent(eventId);
+            print("Task cannot be rescheduled after deadline");
+            return false;
+          }
+        }
         // No conflicts found, we can reschedule the task here
-        await dailyItems.doc(dailyItemId).update({
+        await dailyItems.doc(dailyItem.id).update({
           "startDateTime": proposedStart,
           "endDateTime": proposedEnd,
           "duration": taskDurationInHours,
         });
         print(
             "Task rescheduled to start at $proposedStart and end at $proposedEnd.");
-        return; // Exit after successful reschedule
+        return true; // Exit after successful reschedule
       } else {
         // Conflict found, move to after the conflicting task/event's end time and check again
         proposedStart = (conflictingItem['endDateTime'] as Timestamp).toDate();
