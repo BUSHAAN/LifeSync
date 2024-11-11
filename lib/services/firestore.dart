@@ -339,10 +339,11 @@ class FireStoreService {
           occurrence.day, event.endTime!.hour, event.endTime!.minute);
 
       // Check for conflicts with other DailyItems for this occurrence
-      bool conflictResolved = await _handleDailyItemConflictsAndReschedule(
-          event.userId, startDateTime, endDateTime, event.eventName, docRef.id);
+      List<Map<String, dynamic>>? conflictResolved =
+          await _handleDailyItemConflictsAndReschedule(event.userId,
+              startDateTime, endDateTime, event.eventName, docRef.id);
 
-      if (conflictResolved) {
+      if (conflictResolved == null) {
         // No conflicts or conflicts resolved – Add the DailyItem
         await dailyItems.add({
           "userId": event.userId,
@@ -356,6 +357,11 @@ class FireStoreService {
           "refId": docRef.id,
           "isCompleted": false,
         });
+      } else if (conflictResolved[0]['userId'] == event.userId) {
+        return {
+          'hasConflict': false,
+          'deadlineExTask': conflictResolved[0],
+        };
       } else {
         // If conflicts couldn't be resolved, return with conflict details
         return {
@@ -372,8 +378,12 @@ class FireStoreService {
     return null;
   }
 
-  Future<bool> _handleDailyItemConflictsAndReschedule(String userId,
-      DateTime startDateTime, DateTime endDateTime, String eventName, String eventId) async {
+  Future<List<Map<String, dynamic>>?> _handleDailyItemConflictsAndReschedule(
+      String userId,
+      DateTime startDateTime,
+      DateTime endDateTime,
+      String eventName,
+      String eventId) async {
     // Query daily items that might conflict with this occurrence
     var taskQuery = dailyItems
         .where('userId', isEqualTo: userId)
@@ -385,9 +395,9 @@ class FireStoreService {
 
     // If there are no conflicts, return true (no rescheduling needed)
     if (taskSnapshot.docs.isEmpty) {
-      return true;
+      return null;
     }
-
+    List<Map<String, dynamic>> deadlineExTasks = [];
     // Iterate over conflicting tasks and reschedule them if needed
     for (var taskDoc in taskSnapshot.docs) {
       var taskData = taskDoc.data() as Map<String, dynamic>;
@@ -396,20 +406,24 @@ class FireStoreService {
       int taskDuration = taskEnd.hour - taskStart.hour; // Task duration
 
       // Reschedule the conflicting task (implement your rescheduling logic)
-      await _rescheduleTask(taskDoc, endDateTime, userId, taskDuration,eventId);
+      Map<String, dynamic>? deadlineExTask = await _rescheduleTask(
+          taskDoc, endDateTime, userId, taskDuration, eventId);
+
+      if (deadlineExTask != null) {
+        deadlineExTasks.add(deadlineExTask);
+      }
     }
 
     // After rescheduling, return true
-    return true;
+    return deadlineExTasks;
   }
 
-  Future<bool> _rescheduleTask(
+  Future<Map<String, dynamic>?> _rescheduleTask(
       QueryDocumentSnapshot<Object?> dailyItem, // ID of the task to reschedule
       DateTime eventEndTime, // End time of the new event
       String userId, // User ID for querying tasks
       int taskDurationInHours, // Duration of the task to be rescheduled
-      String eventId
-      ) async {
+      String eventId) async {
     DateTime proposedStart = eventEndTime;
     DateTime proposedEnd =
         proposedStart.add(Duration(hours: taskDurationInHours));
@@ -431,7 +445,7 @@ class FireStoreService {
           if (proposedEnd.isAfter(deadline)) {
             deleteEvent(eventId);
             print("Task cannot be rescheduled after deadline");
-            return false;
+            return taskData;
           }
         }
         // No conflicts found, we can reschedule the task here
@@ -442,7 +456,7 @@ class FireStoreService {
         });
         print(
             "Task rescheduled to start at $proposedStart and end at $proposedEnd.");
-        return true; // Exit after successful reschedule
+        return null; // Exit after successful reschedule
       } else {
         // Conflict found, move to after the conflicting task/event's end time and check again
         proposedStart = (conflictingItem['endDateTime'] as Timestamp).toDate();

@@ -375,6 +375,35 @@ class _AddEventPageState extends State<AddEventPage> {
                           );
                         },
                       );
+                    } else if (result != null && !result['hasConflict']) {
+                      Map<String, dynamic> deadlineExTask =
+                          result['deadlineExTask'];
+                      showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text("Deadline Exceeded"),
+                              content: Text(
+                                  "Deadline of the task '${deadlineExTask['taskName']}' scheduled on ${deadlineExTask['startDate'].toDate().day}-${deadlineExTask['startDate'].toDate().month}-${deadlineExTask['startDate'].toDate().year} will be exceeded. Do you want to add the event anyway?"),
+                              actions: [
+                                TextButton(
+                                  child: const Text("Yes"),
+                                  onPressed: () async {
+                                    await fireStoreService.addEventDetails(
+                                        newEvent,
+                                        );
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                TextButton(
+                                  child: const Text("No"),
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            );
+                          });
                     } else {
                       Navigator.pop(
                           context); // Close the dialog if the event is added successfully
