@@ -329,7 +329,7 @@ class _AddEventPageState extends State<AddEventPage> {
                         await fireStoreService.addEventDetails(newEvent);
 
                     if (result != null && result['hasConflict']) {
-                      QueryDocumentSnapshot blockingEvent =
+                      Map<String, dynamic> blockingEvent =
                           result['blockingEvent'];
 
                       showDialog(
@@ -380,25 +380,32 @@ class _AddEventPageState extends State<AddEventPage> {
                           result['deadlineExTask'];
                       showDialog(
                           context: context,
-                          builder: (BuildContext context) {
+                          builder: (BuildContext dialogContext) {
                             return AlertDialog(
                               title: const Text("Deadline Exceeded"),
                               content: Text(
-                                  "Deadline of the task '${deadlineExTask['taskName']}' scheduled on ${deadlineExTask['startDate'].toDate().day}-${deadlineExTask['startDate'].toDate().month}-${deadlineExTask['startDate'].toDate().year} will be exceeded. Do you want to add the event anyway?"),
+                                  "Deadline of the task '${deadlineExTask['taskName']}' scheduled on ${deadlineExTask['startDate'].toDate().day}-${deadlineExTask['startDate'].toDate().month}-${deadlineExTask['startDate'].toDate().year} will be exceeded. Do you want to add the event anyway? (This will remove the deadline from the task)"),
                               actions: [
                                 TextButton(
                                   child: const Text("Yes"),
                                   onPressed: () async {
+                                    deadlineExTask['deadlineType'] =
+                                        'no deadline';
+                                    deadlineExTask['deadline'] = null;
+                                    await fireStoreService.updateTask(
+                                        deadlineExTask['documentId'],
+                                        deadlineExTask);
                                     await fireStoreService.addEventDetails(
-                                        newEvent,
-                                        );
+                                      newEvent,
+                                    );
+                                    Navigator.pop(dialogContext);
                                     Navigator.pop(context);
                                   },
                                 ),
                                 TextButton(
                                   child: const Text("No"),
                                   onPressed: () {
-                                    Navigator.pop(context);
+                                    Navigator.pop(dialogContext);
                                   },
                                 ),
                               ],

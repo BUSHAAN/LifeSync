@@ -16,6 +16,41 @@ class FireStoreService {
   final CollectionReference dailyItems =
       FirebaseFirestore.instance.collection("DailyItems");
 
+  Future<bool> quickAddTaskDetails(Task task) async {
+    try {
+      DocumentReference<Map<String, dynamic>> taskRef =
+          await FirebaseFirestore.instance.collection("Tasks").add({
+        "userId": task.userId,
+        "taskName": task.taskName,
+        "duration": task.duration,
+        "allowSplitting": false,
+        "maxChunkTime": null,
+        "deadlineType": "no deadline",
+        "deadline": null,
+        "startDate": task.startDate,
+        "schedule": null,
+        "isDone": false,
+      });
+      print(taskRef.id);
+      DocumentReference<Map<String, dynamic>> subTaskRef =
+          await FirebaseFirestore.instance.collection("DailyItems").add({
+        "userId": task.userId,
+        "itemName": task.taskName,
+        "isEvent": false,
+        "startDateTime": DateTime.now(),
+        "endDateTime":
+            DateTime.now().add(Duration(hours: task.duration!.toInt())),
+        "duration": task.duration!.toInt(),
+        "refId": taskRef.id,
+        "isCompleted": false,
+      });
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+
   Future<bool> addTaskDetails(Task task, BuildContext context) async {
     // Step 1: Pre-check if the task duration can fit within its deadline
     bool canFitWithinDeadline = await _canFitWithinDeadline(task);
@@ -150,20 +185,13 @@ class FireStoreService {
           title: Text("Deadline Conflict"),
           content: Text(
               "The task \"$taskName\" cannot be scheduled within its deadline on ${deadline.toLocal()}. "
-              "Would you like to edit the deadline or reschedule?"),
+              "Please edit the task details and try again."),
           actions: [
             TextButton(
-              child: Text("Edit Deadline"),
+              child: Text("Edit Details"),
               onPressed: () {
                 Navigator.of(context)
                     .pop(false); // Return false to allow editing
-              },
-            ),
-            TextButton(
-              child: Text("Cancel"),
-              onPressed: () {
-                Navigator.of(context)
-                    .pop(false); // Return false, cancel adding task
               },
             ),
           ],
@@ -343,7 +371,7 @@ class FireStoreService {
           await _handleDailyItemConflictsAndReschedule(event.userId,
               startDateTime, endDateTime, event.eventName, docRef.id);
 
-      if (conflictResolved == null) {
+      if (conflictResolved == null || conflictResolved.isEmpty) {
         // No conflicts or conflicts resolved – Add the DailyItem
         await dailyItems.add({
           "userId": event.userId,
@@ -357,7 +385,8 @@ class FireStoreService {
           "refId": docRef.id,
           "isCompleted": false,
         });
-      } else if (conflictResolved[0]['userId'] == event.userId) {
+      } else if (conflictResolved.isNotEmpty &&
+          conflictResolved[0]['userId'] == event.userId) {
         return {
           'hasConflict': false,
           'deadlineExTask': conflictResolved[0],
@@ -389,6 +418,7 @@ class FireStoreService {
         .where('userId', isEqualTo: userId)
         .where('startDateTime', isLessThan: endDateTime)
         .where('endDateTime', isGreaterThan: startDateTime)
+        .where('refId', isNotEqualTo: eventId)
         .orderBy('startDateTime');
 
     var taskSnapshot = await taskQuery.get();
@@ -440,11 +470,13 @@ class FireStoreService {
         final taskSnapshot = await tasks.doc(dailyItem['refId']).get();
         Map<String, dynamic> taskData =
             taskSnapshot.data() as Map<String, dynamic>;
-        if (taskData['deadline'] != null) {
+        if (taskData['deadline'] != null &&
+            taskData['deadlineType'] != "no deadline") {
           var deadline = (taskData['deadline'] as Timestamp).toDate();
           if (proposedEnd.isAfter(deadline)) {
             deleteEvent(eventId);
             print("Task cannot be rescheduled after deadline");
+            taskData['documentId'] = dailyItem['refId'];
             return taskData;
           }
         }
@@ -765,14 +797,20 @@ class FireStoreService {
             updatedEvent.endTime!.hour,
             updatedEvent.endTime!.minute);
 
-        await existingItem.reference.update({
-          "duration": endDateTime.difference(startDateTime).inHours,
-          "endDateTime": endDateTime,
-          "isEvent": true,
-          "itemName": updatedEvent.eventName,
-          "startDateTime": startDateTime,
-          "userId": updatedEvent.userId,
-        });
+        List<Map<String, dynamic>>? conflictResolved =
+            await _handleDailyItemConflictsAndReschedule(updatedEvent.userId,
+                startDateTime, endDateTime, updatedEvent.eventName, docId);
+
+        if (conflictResolved == null || conflictResolved.isEmpty) {
+          await existingItem.reference.update({
+            "duration": endDateTime.difference(startDateTime).inHours,
+            "endDateTime": endDateTime,
+            "isEvent": true,
+            "itemName": updatedEvent.eventName,
+            "startDateTime": startDateTime,
+            "userId": updatedEvent.userId,
+          });
+        }
       }
     }
   }

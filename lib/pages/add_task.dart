@@ -27,7 +27,6 @@ class _AddTasksPageState extends State<AddTasksPage> {
   final List<String> _priorities = ["high", "medium", "low"];
   final List<String> _deadlineTypes = [
     "hard deadline",
-    "soft deadline",
     "no deadline"
   ];
   final List<String> _schedules = [
@@ -90,7 +89,7 @@ class _AddTasksPageState extends State<AddTasksPage> {
       case "Morning":
         return Text("Morning (7am - 12pm)");
       case "Afternoon":
-        return Text("Afternoon (12am - 4pm)");
+        return Text("Afternoon (12pm - 4pm)");
       case "Evening":
         return Text("Evening (4pm - 21pm)");
       case "Late Night":
