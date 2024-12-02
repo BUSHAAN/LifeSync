@@ -116,42 +116,80 @@ class MLServices {
     return {'tasks': formattedTasks};
   }
 
-  Future<Map<String, dynamic>> sendTaskDataToPredict(
-      List<Map<String, dynamic>> tasks) async {
-    // Format the task data
-    Map<String, dynamic> formattedData = formatTaskData(tasks);
-    // Convert the formatted data to JSON
-    String jsonBody = jsonEncode(formattedData);
+Future<Map<String, dynamic>> sendTaskDataToPredict(
+    List<Map<String, dynamic>> tasks) async {
+  // Format the task data
+  Map<String, dynamic> formattedData = formatTaskData(tasks);
+  // Convert the formatted data to JSON
+  String jsonBody = jsonEncode(formattedData);
 
-    // Define the API endpoint
-    final String apiUrl = 'http://10.0.2.2:5000/predict';
+  // Define the API endpoint
+  final String apiUrl = 'http://10.0.2.2:5000/predict';
 
-    // Make the POST request
-    final response = await http.post(
-      Uri.parse(apiUrl),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonBody,
-    );
+  // Make the POST request
+  final response = await http.post(
+    Uri.parse(apiUrl),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonBody,
+  );
 
-    // Check the response status
-    if (response.statusCode == 200) {
-      // Parse the JSON response
-      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
-      // Extract the predicted task name
+  if (response.statusCode == 200) {
+    // Parse the JSON response
+    final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
-      // Print the response
-      print('API call successful');
+    // Extract predictions and filter them
+    List<Map<String, dynamic>> predictions = List<Map<String, dynamic>>.from(
+        responseData['predictions'] ?? []);
 
-      return responseData;
-    } else {
-      // Error response
-      print('API call failed with status code: ${response.statusCode}');
+    List<Map<String, dynamic>> filteredPredictions =
+        filterPredictionsByTime(predictions);
 
-      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
-      return responseData;
-    }
+    return {
+      'predictions': filteredPredictions,
+      'error': responseData['error'] ?? ""
+    };
+  } else {
+    print('API call failed with status code: ${response.statusCode}');
+    final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+    return responseData;
+  }
+}
+
+
+  List<Map<String, dynamic>> filterPredictionsByTime(
+      List<Map<String, dynamic>> predictions) {
+
+    DateTime now = DateTime.now();
+
+    final Map<String, List<int>> taskTimeRanges = {
+      'breakfast': [6, 10],
+      'lunch': [11, 14],
+      'dinner': [19, 23],
+      'sleep': [20, 24],
+    };
+
+    int currentHour = now.hour;
+
+    List<Map<String, dynamic>> filteredPredictions =
+        predictions.where((prediction) {
+      String taskName = prediction['prediction'].toString().toLowerCase();
+
+      if (taskTimeRanges.containsKey(taskName)) {
+        List<int> timeRange = taskTimeRanges[taskName]!;
+        if (currentHour >= timeRange[0] && currentHour < timeRange[1]) {
+          return true;
+        } else if (timeRange[1] == 24 && currentHour < timeRange[1]) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+
+    return filteredPredictions;
   }
 
   Future<Map<String, dynamic>> checkForFreeSlotAndPredict() async {
