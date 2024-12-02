@@ -48,123 +48,127 @@ class MLServices {
       String userId, int numberOfTasks) async {
     // Get current time
     DateTime now = DateTime.now();
-    DateTime eightHoursAgo = now.subtract(const Duration(hours: 8));
 
     // Query to fetch the last few tasks within the past 8 hours
     var tasksQuery = await FirebaseFirestore.instance
         .collection('DailyItems')
         .where('userId', isEqualTo: userId)
-        .where('isEvent', isEqualTo: false)
         .where('startDateTime', isLessThan: now)
-        .where('endDateTime', isGreaterThan: eightHoursAgo)
         .orderBy('endDateTime', descending: true)
         .limit(numberOfTasks)
         .get();
 
     // Convert the query snapshot to a list of task maps
-    List<Map<String, dynamic>> tasks =
+    List<Map<String, dynamic>> last_dailyItems =
         tasksQuery.docs.map((doc) => doc.data()).toList();
 
-    return tasks;
+    return last_dailyItems;
   }
 
-  String getTimeOfDay(int hour) {
-    if (hour >= 6 && hour < 12) return 'Morning';
-    if (hour >= 12 && hour < 16) return 'Afternoon';
-    if (hour >= 16 && hour < 21) return 'Evening';
-    if (hour >= 21 || hour < 6) return 'Late-Night';
-    return 'After-Midnight';
+  String getDayOfWeek(DateTime dateTime) {
+    // List of days of the week, starting with Monday
+    const List<String> daysOfWeek = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+
+    // Get the weekday as an integer (1 for Monday, 7 for Sunday)
+    int dayIndex = dateTime.weekday;
+
+    // Return the corresponding day name
+    return daysOfWeek[dayIndex - 1];
   }
 
-  Map<String, dynamic> formatTaskData(List<Map<String, dynamic>> tasks) {
-    List<Map<String, dynamic>> formattedTasks = tasks.map((task) {
+  String convertDateTimeToCustomFormat(DateTime dateTime) {
+    // Extract the hour and minute components
+    int hour = dateTime.hour;
+    int minute = dateTime.minute;
+
+    // Return the time in the custom format as a single integer
+    return (hour * 100 + minute).toString();
+  }
+
+  Map<String, dynamic> formatTaskData(List<Map<String, dynamic>> dailyItems) {
+    List<Map<String, dynamic>> formattedTasks = dailyItems.map((dailyItem) {
       // Extract hour from startDateTime
-      DateTime startDateTime = (task['startDateTime'] as Timestamp).toDate();
-      int hour = startDateTime.hour;
 
-      // Determine time of day
-      String timeOfDay = getTimeOfDay(hour);
+      DateTime startDateTime =
+          (dailyItem['startDateTime'] as Timestamp).toDate();
+      String dayOfWeek = getDayOfWeek(startDateTime);
+      String startDateTimeFormatted =
+          convertDateTimeToCustomFormat(startDateTime);
+      String endDateTimeFormatted = convertDateTimeToCustomFormat(
+          (dailyItem['endDateTime'] as Timestamp).toDate());
 
       return {
-        'task_name': task['itemName'],
-        'duration': task['duration'],
-        'time_of_day': timeOfDay
+        'task_name': dailyItem['itemName'],
+        'start_time': startDateTimeFormatted,
+        'end_time': endDateTimeFormatted,
+        'duration': dailyItem['duration'],
+        'weekday': dayOfWeek,
       };
     }).toList();
-
     return {'tasks': formattedTasks};
   }
 
-  Future<String?> sendTaskDataToApi(List<Map<String, dynamic>> tasks) async {
+  Future<Map<String, dynamic>> sendTaskDataToPredict(
+      List<Map<String, dynamic>> tasks) async {
     // Format the task data
     Map<String, dynamic> formattedData = formatTaskData(tasks);
-    print(formattedData);
     // Convert the formatted data to JSON
     String jsonBody = jsonEncode(formattedData);
 
     // Define the API endpoint
     final String apiUrl = 'http://10.0.2.2:5000/predict';
 
-    try {
-      // Make the POST request
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonBody,
-      );
+    // Make the POST request
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonBody,
+    );
 
-      // Check the response status
-      if (response.statusCode == 200) {
-        // Parse the JSON response
-        final responseData = jsonDecode(response.body) as Map<String, dynamic>;
-        // Extract the predicted task name
-        String predictedTaskName =
-            responseData['predicted_task_name'] ?? 'No task predicted';
+    // Check the response status
+    if (response.statusCode == 200) {
+      // Parse the JSON response
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+      // Extract the predicted task name
 
-        // Print the response
-        print('API call successful');
-        print('Predicted task name: $predictedTaskName');
+      // Print the response
+      print('API call successful');
 
-        return predictedTaskName;
-      } else {
-        // Error response
-        print('API call failed with status code: ${response.statusCode}');
-        print('Response body: ${response.body}');
+      return responseData;
+    } else {
+      // Error response
+      print('API call failed with status code: ${response.statusCode}');
 
-        return null;
-      }
-    } catch (e) {
-      // Handle any exceptions
-      print('Error making API call: $e');
-
-      return null;
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+      return responseData;
     }
   }
 
-  Future<String?> checkForFreeSlotAndPredict() async {
+  Future<Map<String, dynamic>> checkForFreeSlotAndPredict() async {
     final userId = FirebaseAuth.instance.currentUser!.uid;
-    final isFree = await isCurrentTaskOrFreeSlot(userId);
-    if (isFree) {
-      print('You have a free slot in the next 4 hours');
-      final tasks = await fetchLastTasks(userId, 2);
-      final prediction = await sendTaskDataToApi(tasks);
-      //print("prediction: $prediction");
-      if (prediction != null) {
-        AwesomeNotifications().createNotification(
-          content: NotificationContent(
-            id: 10,
-            channelKey: 'life_sync',
-            title: 'New Prediction',
-            body: 'You have a new prediction. Click to view',
-          ),
-        );
-      }
-      return prediction; // Return the prediction
-    } else {
-      print('You have a task scheduled right now');
-      return ('You have a task scheduled right now');
-    }
+    print('You have a free slot in the next 4 hours');
+    final tasks = await fetchLastTasks(userId, 10);
+    final predictions = await sendTaskDataToPredict(tasks);
+
+
+    AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id: 10,
+        channelKey: 'life_sync',
+        title: 'New Prediction',
+        body: 'You have a new prediction. Click to view',
+      ),
+    );
+    return predictions;
   }
 }

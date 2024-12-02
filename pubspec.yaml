@@ -40,7 +40,6 @@ dependencies:
   syncfusion_flutter_calendar: 
   provider: 
   http:
-  workmanager:
   awesome_notifications: ^0.9.3+1
 
 dev_dependencies:

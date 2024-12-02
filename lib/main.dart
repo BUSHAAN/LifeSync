@@ -7,20 +7,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_todo_app/firebase_options.dart';
 import 'package:flutter_todo_app/pages/auth_page.dart';
 import 'package:flutter_todo_app/services/task_prediction_services.dart';
-import 'package:workmanager/workmanager.dart';
 
 const taskName = 'taskPrediction';
 void callbackDispatcher() {
   MLServices mlServices = MLServices();
-  Workmanager().executeTask((taskName, inputData) async {
-    switch (taskName) {
-      case 'taskPrediction':
-        await mlServices.checkForFreeSlotAndPredict();
-        break;
-      default:
-    }
-    return Future.value(true);
-  });
 }
 
 
@@ -28,12 +18,6 @@ void callbackDispatcher() {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await Workmanager().initialize(callbackDispatcher,isInDebugMode: true);
-  await Workmanager().registerPeriodicTask(
-    'taskPrediction101',
-    taskName,
-    frequency: Duration(minutes: 15),
-  );
   AwesomeNotifications().initialize(
     null,
     [
