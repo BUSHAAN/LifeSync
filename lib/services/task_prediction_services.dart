@@ -164,9 +164,9 @@ Future<Map<String, dynamic>> sendTaskDataToPredict(
     DateTime now = DateTime.now();
 
     final Map<String, List<int>> taskTimeRanges = {
-      'breakfast': [6, 10],
-      'lunch': [11, 14],
-      'dinner': [19, 23],
+      'breakfast': [5, 10],
+      'lunch': [11, 15],
+      'dinner': [18, 23],
       'sleep': [20, 24],
     };
 

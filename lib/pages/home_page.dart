@@ -3,11 +3,11 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_todo_app/pages/addDailyitems.dart';
 import 'package:flutter_todo_app/pages/all_events_page.dart';
 import 'package:flutter_todo_app/pages/all_tasks_page.dart';
 import 'package:flutter_todo_app/pages/prediction.dart';
 import 'package:flutter_todo_app/pages/scheduling_section.dart';
-
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,6 +23,7 @@ class _HomePageState extends State<HomePage> {
   void signUserOut() async {
     await FirebaseAuth.instance.signOut();
   }
+
   @override
   void initState() {
     print("Checking for new predictions");
@@ -36,7 +37,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
         appBar: AppBar(
           iconTheme: IconThemeData(color: Colors.white),
@@ -49,36 +49,36 @@ class _HomePageState extends State<HomePage> {
           ),
           actions: [
             IconButton(
-                icon: Icon(Icons.lightbulb_outline), // Use an appropriate icon
-                onPressed: () {
-                  // Navigate to the prediction page
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => PredictionPage()),
-                  );
-                  
-                  // Reset the new prediction indicator once the user views the page
-                  setState(() {
-                    _hasNewPrediction = false;
-                  });
-                },
-              ),
-              if (_hasNewPrediction)
-                Positioned(
-                  right: 11,
-                  top: 11,
-                  child: Container(
-                    padding: EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    constraints: BoxConstraints(
-                      minWidth: 12,
-                      minHeight: 12,
-                    ),
+              icon: Icon(Icons.lightbulb_outline), // Use an appropriate icon
+              onPressed: () {
+                // Navigate to the prediction page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => PredictionPage()),
+                );
+
+                // Reset the new prediction indicator once the user views the page
+                setState(() {
+                  _hasNewPrediction = false;
+                });
+              },
+            ),
+            if (_hasNewPrediction)
+              Positioned(
+                right: 11,
+                top: 11,
+                child: Container(
+                  padding: EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  constraints: BoxConstraints(
+                    minWidth: 12,
+                    minHeight: 12,
                   ),
                 ),
+              ),
           ],
           backgroundColor: Colors.blue.shade600,
         ),
@@ -143,6 +143,17 @@ class _HomePageState extends State<HomePage> {
                 onTap: () {
                   signUserOut();
                   Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Text('dailyitems'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => AddDailyItemsPage()),
+                  );
                 },
               ),
             ],

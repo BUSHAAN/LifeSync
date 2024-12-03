@@ -124,7 +124,8 @@ class FireStoreService {
         "isEvent": false,
         "startDateTime": startDateTime,
         "endDateTime": endDateTime,
-        "duration": currentChunkTime,
+        "duration":
+            currentChunkTime >= 0 ? currentChunkTime : currentChunkTime + 24,
         "refId": taskRef.id,
         "isCompleted": false,
       });
@@ -365,7 +366,10 @@ class FireStoreService {
           occurrence.day, event.startTime!.hour, event.startTime!.minute);
       DateTime endDateTime = DateTime(occurrence.year, occurrence.month,
           occurrence.day, event.endTime!.hour, event.endTime!.minute);
-
+      if (endDateTime.isBefore(startDateTime)) {
+        // Add one day to endDateTime to account for the overnight event
+        endDateTime = endDateTime.add(Duration(days: 1));
+      }
       // Check for conflicts with other DailyItems for this occurrence
       List<Map<String, dynamic>>? conflictResolved =
           await _handleDailyItemConflictsAndReschedule(event.userId,
@@ -373,15 +377,14 @@ class FireStoreService {
 
       if (conflictResolved == null || conflictResolved.isEmpty) {
         // No conflicts or conflicts resolved – Add the DailyItem
+        int duration = event.endTime!.difference(event.startTime!).inHours;
         await dailyItems.add({
           "userId": event.userId,
           "itemName": event.eventName,
           "isEvent": true,
           "startDateTime": startDateTime,
           "endDateTime": endDateTime,
-          "duration": event.endTime == null
-              ? 0
-              : event.endTime!.difference(event.startTime!).inHours,
+          "duration": duration >= 0 ? duration : duration + 24,
           "refId": docRef.id,
           "isCompleted": false,
         });
@@ -414,6 +417,7 @@ class FireStoreService {
       String eventName,
       String eventId) async {
     // Query daily items that might conflict with this occurrence
+
     var taskQuery = dailyItems
         .where('userId', isEqualTo: userId)
         .where('startDateTime', isLessThan: endDateTime)
@@ -484,7 +488,7 @@ class FireStoreService {
         await dailyItems.doc(dailyItem.id).update({
           "startDateTime": proposedStart,
           "endDateTime": proposedEnd,
-          "duration": taskDurationInHours,
+          "duration": taskDurationInHours>=0?taskDurationInHours:taskDurationInHours+24,
         });
         print(
             "Task rescheduled to start at $proposedStart and end at $proposedEnd.");
@@ -767,9 +771,9 @@ class FireStoreService {
             occurrence.day,
             updatedEvent.endTime!.hour,
             updatedEvent.endTime!.minute);
-
+        int duration = endDateTime.difference(startDateTime).inHours;
         await dailyItems.add({
-          "duration": endDateTime.difference(startDateTime).inHours,
+          "duration": duration >= 0 ? duration : duration + 24,
           "endDateTime": endDateTime,
           "isEvent": true,
           "itemName": updatedEvent.eventName,
@@ -849,7 +853,7 @@ class FireStoreService {
   Future<void> updateDailyItem(
       String docId, Map<String, dynamic> updatedDailyItem) async {
     await dailyItems.doc(docId).update({
-      'duration': updatedDailyItem['duration'],
+      'duration': updatedDailyItem['duration']>=0?updatedDailyItem['duration']:updatedDailyItem['duration']+24,
       'endDateTime': updatedDailyItem['endDateTime'],
       'isEvent': updatedDailyItem['isEvent'],
       'itemName': updatedDailyItem['itemName'],
@@ -892,5 +896,9 @@ class FireStoreService {
       await SchedulingSection()
           .showCompletionOrRescheduleDialog(context, dailyItem, doc.id, userId);
     }
+  }
+
+  void addDataCustomMethod() {
+    const userId = "vqtaKCysfFZJXm6sXAYKO7CX9sE3";
   }
 }

@@ -36,7 +36,6 @@ class _AddEventPageState extends State<AddEventPage> {
         (pickedTime.hour != _startTime?.hour ||
             pickedTime.minute != _startTime?.minute)) {
       setState(() {
-        // Update only the time part of _deadline
         _startTime = DateTime(
             _startTime?.year ?? DateTime.now().year,
             _startTime?.month ?? DateTime.now().month,
@@ -58,7 +57,6 @@ class _AddEventPageState extends State<AddEventPage> {
         (pickedTime.hour != _endTime?.hour ||
             pickedTime.minute != _endTime?.minute)) {
       setState(() {
-        // Update only the time part of _deadline
         _endTime = DateTime(
             _endTime?.year ?? DateTime.now().year,
             _endTime?.month ?? DateTime.now().month,
@@ -330,7 +328,8 @@ class _AddEventPageState extends State<AddEventPage> {
 
                     if (result != null && result['hasConflict']) {
                       Map<String, dynamic> blockingEvent =
-                          result['blockingEvent'];
+                          result['blockingEvent'].data()
+                              as Map<String, dynamic>;
 
                       showDialog(
                         context: context,
@@ -339,7 +338,7 @@ class _AddEventPageState extends State<AddEventPage> {
                             title: const Text("Event Conflict"),
                             content: blockingEvent['frequency'] == 'One-Time'
                                 ? Text(
-                                    "The event '${blockingEvent['eventName']}' scheduled on ${blockingEvent['startDate'].toDate().day}-${blockingEvent['startDate'].toDate().month}-${blockingEvent['startDate'].toDate().year} conflicts with your new event.")
+                                    "The event '${blockingEvent['eventName']}' scheduled from ${blockingEvent['startTime'].toDate().hour}:${blockingEvent['startTime'].toDate().minute.toString().padLeft(2, '0')} to ${blockingEvent['endTime'].toDate().hour}:${blockingEvent['endTime'].toDate().minute.toString().padLeft(2, '0')} on ${blockingEvent['startDate'].toDate().day}-${blockingEvent['startDate'].toDate().month}-${blockingEvent['startDate'].toDate().year} conflicts with your new event.")
                                 : blockingEvent['frequency'] == 'Weekly'
                                     ? Text(
                                         "The event '${blockingEvent['eventName']}' scheduled weekly on ${blockingEvent['selectedWeekdays'].map((weekday) {
@@ -361,9 +360,9 @@ class _AddEventPageState extends State<AddEventPage> {
                                           default:
                                             return '';
                                         }
-                                      }).join(', ')} at ${blockingEvent['startTime'].toDate().hour}:${blockingEvent['startTime'].toDate().minute.toString().padLeft(2, '0')} conflicts with your new event.")
+                                      }).join(', ')} from ${blockingEvent['startTime'].toDate().hour}:${blockingEvent['startTime'].toDate().minute.toString().padLeft(2, '0')} to ${blockingEvent['endTime'].toDate().hour}:${blockingEvent['endTime'].toDate().minute.toString().padLeft(2, '0')} conflicts with your new event.")
                                     : Text(
-                                        "The event '${blockingEvent['eventName']}' scheduled daily at ${blockingEvent['startTime'].toDate().hour}:${blockingEvent['startTime'].toDate().minute.toString().padLeft(2, '0')} conflicts with your new event."),
+                                        "The event '${blockingEvent['eventName']}' scheduled daily from ${blockingEvent['startTime'].toDate().hour}:${blockingEvent['startTime'].toDate().minute.toString().padLeft(2, '0')} to ${blockingEvent['endTime'].toDate().hour}:${blockingEvent['endTime'].toDate().minute.toString().padLeft(2, '0')} conflicts with your new event."),
                             actions: [
                               TextButton(
                                 child: const Text("OK"),
