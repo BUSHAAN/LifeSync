@@ -116,15 +116,35 @@ class MLServices {
     return {'tasks': formattedTasks};
   }
 
+Map<String, dynamic> reverseFormattedData(Map<String, dynamic> formattedData) {
+  // Check if the formattedData has a 'tasks' key and it is a list
+  if (formattedData.containsKey('tasks') && formattedData['tasks'] is List) {
+    // Reverse the list of tasks
+    List tasks = formattedData['tasks'];
+    List reversedTasks = tasks.reversed.toList();
+
+    // Return a new map with the reversed tasks
+    return {
+      ...formattedData,
+      'tasks': reversedTasks,
+    };
+  } else {
+    // If the input does not contain tasks, return the original map
+    return formattedData;
+  }
+}
+
 Future<Map<String, dynamic>> sendTaskDataToPredict(
     List<Map<String, dynamic>> tasks) async {
   // Format the task data
   Map<String, dynamic> formattedData = formatTaskData(tasks);
+  // Reverse the formatted data
+  Map<String, dynamic> formattedRevData = reverseFormattedData(formattedData);
   // Convert the formatted data to JSON
-  String jsonBody = jsonEncode(formattedData);
-
+  String jsonBody = jsonEncode(formattedRevData);
   // Define the API endpoint
-  final String apiUrl = 'http://10.0.2.2:5000/predict';
+  final String apiUrl = 'http://10.0.2.2/predict';
+  //final String apiUrl = 'https://lifesync-cucsebaqa9cpasbc.southeastasia-01.azurewebsites.net/predict';
 
   // Make the POST request
   final response = await http.post(
@@ -136,16 +156,16 @@ Future<Map<String, dynamic>> sendTaskDataToPredict(
   );
 
   if (response.statusCode == 200) {
+    print('API call successful');
     // Parse the JSON response
     final responseData = jsonDecode(response.body) as Map<String, dynamic>;
-
+    //print(responseData);
     // Extract predictions and filter them
     List<Map<String, dynamic>> predictions = List<Map<String, dynamic>>.from(
         responseData['predictions'] ?? []);
 
     List<Map<String, dynamic>> filteredPredictions =
         filterPredictionsByTime(predictions);
-
     return {
       'predictions': filteredPredictions,
       'error': responseData['error'] ?? ""
@@ -153,6 +173,7 @@ Future<Map<String, dynamic>> sendTaskDataToPredict(
   } else {
     print('API call failed with status code: ${response.statusCode}');
     final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
     return responseData;
   }
 }
@@ -164,7 +185,7 @@ Future<Map<String, dynamic>> sendTaskDataToPredict(
     DateTime now = DateTime.now();
 
     final Map<String, List<int>> taskTimeRanges = {
-      'breakfast': [5, 10],
+      'breakfast': [5, 11],
       'lunch': [11, 15],
       'dinner': [18, 23],
       'sleep': [20, 24],
@@ -188,13 +209,13 @@ Future<Map<String, dynamic>> sendTaskDataToPredict(
       }
       return true;
     }).toList();
-
+    print(filteredPredictions);
     return filteredPredictions;
   }
 
   Future<Map<String, dynamic>> checkForFreeSlotAndPredict() async {
     final userId = FirebaseAuth.instance.currentUser!.uid;
-    print('You have a free slot in the next 4 hours');
+    //print('You have a free slot in the next 4 hours');
     final tasks = await fetchLastTasks(userId, 10);
     final predictions = await sendTaskDataToPredict(tasks);
 

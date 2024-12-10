@@ -340,7 +340,7 @@ class FireStoreService {
       throw Exception("Invalid event frequency");
     }
 
-    QueryDocumentSnapshot? conflictResult = await _checkForConflicts(event);
+    QueryDocumentSnapshot? conflictResult = await _checkForConflicts(event);//occurences
     if (conflictResult != null) {
       // If a conflict is found, return the conflicting event
       return {

@@ -145,17 +145,17 @@ class _HomePageState extends State<HomePage> {
                   Navigator.pop(context);
                 },
               ),
-              ListTile(
-                title: const Text('dailyitems'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => AddDailyItemsPage()),
-                  );
-                },
-              ),
+              // ListTile(
+              //   title: const Text('dailyitems'),
+              //   onTap: () {
+              //     Navigator.pop(context);
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //           builder: (context) => AddDailyItemsPage()),
+              //     );
+              //   },
+              // ),
             ],
           ),
         ),
