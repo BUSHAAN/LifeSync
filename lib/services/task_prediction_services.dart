@@ -123,6 +123,10 @@ Map<String, dynamic> reverseFormattedData(Map<String, dynamic> formattedData) {
     List tasks = formattedData['tasks'];
     List reversedTasks = tasks.reversed.toList();
 
+    if (reversedTasks.isNotEmpty) {
+      reversedTasks.removeLast();
+    }
+    //print(reversedTasks);
     // Return a new map with the reversed tasks
     return {
       ...formattedData,
@@ -216,7 +220,7 @@ Future<Map<String, dynamic>> sendTaskDataToPredict(
   Future<Map<String, dynamic>> checkForFreeSlotAndPredict() async {
     final userId = FirebaseAuth.instance.currentUser!.uid;
     //print('You have a free slot in the next 4 hours');
-    final tasks = await fetchLastTasks(userId, 10);
+    final tasks = await fetchLastTasks(userId, 11);
     final predictions = await sendTaskDataToPredict(tasks);
 
 

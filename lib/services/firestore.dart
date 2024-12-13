@@ -117,6 +117,11 @@ class FireStoreService {
       startDateTime = nextAvailableStart;
       endDateTime = startDateTime.add(Duration(hours: currentChunkTime));
 
+      if (endDateTime.hour > endHour) {
+        currentDate = currentDate.add(Duration(days: 1));
+        continue; // Skip adding this chunk and move to the next day
+      }
+
       // Add subtask (DailyItem) to Firestore
       await FirebaseFirestore.instance.collection("DailyItems").add({
         "userId": task.userId,
