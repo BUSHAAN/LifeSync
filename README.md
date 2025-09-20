@@ -12,8 +12,7 @@
 ---
 
 ## 📖 Overview  
-**LifeSync** is a prototype mobile application developed as a final-year project.  
-It’s designed to make **personal task management smarter** through:  
+**LifeSync** is a prototype mobile application designed to make **personal task management smarter** through:  
 
 - 🔮 **Predictive scheduling** powered by an LSTM model  
 - 🔔 **Task reminders** with in-app notifications  
