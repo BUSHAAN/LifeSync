@@ -30,17 +30,19 @@ dependencies:
   flutter:
     sdk: flutter
 
-
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: 
   firebase_core: 
   cloud_firestore: 
   firebase_auth: 
-  syncfusion_flutter_calendar: 
   provider: 
-  http:
-  awesome_notifications: ^0.9.3+1
+  http: 
+  awesome_notifications: 
+  syncfusion_flutter_calendar: ^31.1.23
+  syncfusion_flutter_core: ^31.1.23
+  syncfusion_flutter_datepicker: ^31.1.23
+
 
 dev_dependencies:
   flutter_test:
