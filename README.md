@@ -79,7 +79,7 @@ This project demonstrates the potential of integrating **machine learning** into
 
 1. Clone the Repository  
   ```bash
-    git clone https://github.com/yourusername/lifesync.git
+    git clone https://github.com/BUSHAAN/LifeSync.git
     cd lifesync
   ```
 2. Install Dependencies
